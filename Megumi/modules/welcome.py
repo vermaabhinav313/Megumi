@@ -421,8 +421,7 @@ def left_member(update: Update, context: CallbackContext):
 
             send(
                 update, res, keyboard,
-                random.choice(
-                    sql.DEFAULT_GOODBYE_MESSAGES).format(first=first_name))
+                sql.DEFAULT_GOODBYE.format(first=first_name))
 
 
 @run_async
