@@ -24,6 +24,7 @@ from telegram.ext import (CallbackContext, CallbackQueryHandler, CommandHandler,
                           Filters, MessageHandler, run_async)
 from telegram.utils.helpers import (escape_markdown, mention_html,
                                     mention_markdown)
+
 VALID_WELCOME_FORMATTERS = [
     'first', 'last', 'fullname', 'username', 'id', 'count', 'chatname',
     'mention'
@@ -144,46 +145,21 @@ def new_member(update: Update, context: CallbackContext):
             # Give the owner a special welcome
             if new_mem.id == OWNER_ID:
                 update.effective_message.reply_text(
-                    "My Owner has just joined your group.",
-                    reply_to_message_id=reply)
+                    "Master is in the houseeee, let's get this party started!",
+                     reply_to_message_id=reply)
                 welcome_log = (f"{html.escape(chat.title)}\n"
                                f"#USER_JOINED\n"
                                f"Bot Owner just joined the chat")
 
             # Welcome Devs
-            elif new_mem.id in DEV_USERS:
-                update.effective_message.reply_text(
-                    "Whoa, Megumi Developer just joined your chat.",
-                    reply_to_message_id=reply)
-
-            # Welcome Sudos
-            elif new_mem.id in SUDO_USERS:
-                update.effective_message.reply_text(
-                    "Huh! A Megumi Moderator just joined your chat.",
-                    reply_to_message_id=reply)
-
-            # Welcome Support
-            elif new_mem.id in SUPPORT_USERS:
-                update.effective_message.reply_text(
-                    "Huh! A Megumi Moderator just joined your chat.",
-                    reply_to_message_id=reply)
-
-            # Welcome Whitelisted
-            elif new_mem.id in TIGER_USERS:
-                update.effective_message.reply_text(
-                    "Huh! A Megumi Moderator just joined your chat.",
-                    reply_to_message_id=reply)
-
-            # Welcome Tigers
-            elif new_mem.id in WHITELIST_USERS:
-                update.effective_message.reply_text(
-                    "Huh! A Megumi Moderator just joined your chat.",
-                    reply_to_message_id=reply)
+            elif new_mem.id in DEV_USERS or new_mem.id in SUDO_USERS or new_mem.id in SUPPORT_USERS:
+                update.effective_message.reply_text("{first} has joined your chat".format(escape_markdown(first_name)),
+                reply_to_message_id=reply)
 
             # Welcome yourself
             elif new_mem.id == bot.id:
-                update.effective_message.reply_text(
-                    "Hey, I'm Megumi! Thank you for adding me. Be sure to check /help in PM for more commands and tricks!", reply_to_message_id=reply)
+                update.effective_message.reply_text("Hey, I'm Megumi! Thank you for adding me. Be sure to check /help in PM for more commands and tricks!",
+                  reply_to_message_id=reply)
 
             else:
                 # If welcome message is media, send with appropriate function
@@ -196,8 +172,7 @@ def new_member(update: Update, context: CallbackContext):
 
                 if cust_welcome:
                     if cust_welcome == sql.DEFAULT_WELCOME:
-                        cust_welcome = random.choice(
-                            sql.DEFAULT_WELCOME_MESSAGES).format(
+                        cust_welcome = sql.DEFAULT_WELCOME.format(
                                 first=escape_markdown(first_name))
 
                     if new_mem.last_name:
@@ -228,12 +203,11 @@ def new_member(update: Update, context: CallbackContext):
                     keyb = build_keyboard(buttons)
 
                 else:
-                    res = random.choice(sql.DEFAULT_WELCOME_MESSAGES).format(
+                    res = sql.DEFAULT_WELCOME.format(
                         first=escape_markdown(first_name))
                     keyb = []
 
-                backup_message = random.choice(
-                    sql.DEFAULT_WELCOME_MESSAGES).format(
+                backup_message = sql.DEFAULT_WELCOME.format(
                         first=escape_markdown(first_name))
                 keyboard = InlineKeyboardMarkup(keyb)
 
@@ -393,13 +367,13 @@ def left_member(update: Update, context: CallbackContext):
             # Give the owner a special goodbye
             if left_mem.id == OWNER_ID:
                 update.effective_message.reply_text(
-                    "Oi! Genos! He left..", reply_to_message_id=reply)
+                    "Nice Knowing ya!", reply_to_message_id=reply)
                 return
 
             # Give the devs a special goodbye
             elif left_mem.id in DEV_USERS:
                 update.effective_message.reply_text(
-                    "See you later at the Hero's Association!",
+                    "Nice Knowing ya!",
                     reply_to_message_id=reply)
                 return
 
@@ -411,8 +385,7 @@ def left_member(update: Update, context: CallbackContext):
             first_name = left_mem.first_name or "PersonWithNoName"  # edge case of empty name - occurs for some bugs.
             if cust_goodbye:
                 if cust_goodbye == sql.DEFAULT_GOODBYE:
-                    cust_goodbye = random.choice(
-                        sql.DEFAULT_GOODBYE_MESSAGES).format(
+                    cust_goodbye = sql.DEFAULT_GOODBYE.format(
                             first=escape_markdown(first_name))
                 if left_mem.last_name:
                     fullname = escape_markdown(
@@ -441,8 +414,7 @@ def left_member(update: Update, context: CallbackContext):
                 keyb = build_keyboard(buttons)
 
             else:
-                res = random.choice(
-                    sql.DEFAULT_GOODBYE_MESSAGES).format(first=first_name)
+                res = sql.DEFAULT_GOODBYE.format(first=first_name)
                 keyb = []
 
             keyboard = InlineKeyboardMarkup(keyb)
@@ -646,7 +618,7 @@ def welcomemute(update: Update, context: CallbackContext) -> str:
             return (
                 f"<b>{html.escape(chat.title)}:</b>\n"
                 f"#WELCOME_MUTE\n"
-                f"<b>â€¢ Admin:</b> {mention_html(user.id, user.first_name)}\n"
+                f"<b>• Admin:</b> {mention_html(user.id, user.first_name)}\n"
                 f"Has toggled welcome mute to <b>OFF</b>.")
         elif args[0].lower() in ["soft"]:
             sql.set_welcome_mutes(chat.id, "soft")
@@ -655,7 +627,7 @@ def welcomemute(update: Update, context: CallbackContext) -> str:
             return (
                 f"<b>{html.escape(chat.title)}:</b>\n"
                 f"#WELCOME_MUTE\n"
-                f"<b>â€¢ Admin:</b> {mention_html(user.id, user.first_name)}\n"
+                f"<b>• Admin:</b> {mention_html(user.id, user.first_name)}\n"
                 f"Has toggled welcome mute to <b>SOFT</b>.")
         elif args[0].lower() in ["strong"]:
             sql.set_welcome_mutes(chat.id, "strong")
@@ -665,7 +637,7 @@ def welcomemute(update: Update, context: CallbackContext) -> str:
             return (
                 f"<b>{html.escape(chat.title)}:</b>\n"
                 f"#WELCOME_MUTE\n"
-                f"<b>â€¢ Admin:</b> {mention_html(user.id, user.first_name)}\n"
+                f"<b>• Admin:</b> {mention_html(user.id, user.first_name)}\n"
                 f"Has toggled welcome mute to <b>STRONG</b>.")
         else:
             msg.reply_text(
@@ -802,17 +774,17 @@ def user_button(update: Update, context: CallbackContext):
 WELC_HELP_TXT = (
     "Your group's welcome/goodbye messages can be personalised in multiple ways. If you want the messages"
     " to be individually generated, like the default welcome message is, you can use *these* variables:\n"
-    " â€¢ `{first}`*:* this represents the user's *first* name\n"
-    " â€¢ `{last}`*:* this represents the user's *last* name. Defaults to *first name* if user has no "
+    " • `{first}`*:* this represents the user's *first* name\n"
+    " • `{last}`*:* this represents the user's *last* name. Defaults to *first name* if user has no "
     "last name.\n"
-    " â€¢ `{fullname}`*:* this represents the user's *full* name. Defaults to *first name* if user has no "
+    " • `{fullname}`*:* this represents the user's *full* name. Defaults to *first name* if user has no "
     "last name.\n"
-    " â€¢ `{username}`*:* this represents the user's *username*. Defaults to a *mention* of the user's "
+    " • `{username}`*:* this represents the user's *username*. Defaults to a *mention* of the user's "
     "first name if has no username.\n"
-    " â€¢ `{mention}`*:* this simply *mentions* a user - tagging them with their first name.\n"
-    " â€¢ `{id}`*:* this represents the user's *id*\n"
-    " â€¢ `{count}`*:* this represents the user's *member number*.\n"
-    " â€¢ `{chatname}`*:* this represents the *current chat name*.\n"
+    " • `{mention}`*:* this simply *mentions* a user - tagging them with their first name.\n"
+    " • `{id}`*:* this represents the user's *id*\n"
+    " • `{count}`*:* this represents the user's *member number*.\n"
+    " • `{chatname}`*:* this represents the *current chat name*.\n"
     "\nEach variable MUST be surrounded by `{}` to be replaced.\n"
     "Welcome messages also support markdown, so you can make any elements bold/italic/code/links. "
     "Buttons are also supported, so you can make your welcomes look awesome with some nice intro "
@@ -827,9 +799,9 @@ WELC_HELP_TXT = (
 WELC_MUTE_HELP_TXT = (
     "You can get the bot to mute new people who join your group and hence prevent spambots from flooding your group. "
     "The following options are possible:\n"
-    "â€¢ `/welcomemute soft`*:* restricts new members from sending media for 24 hours.\n"
-    "â€¢ `/welcomemute strong`*:* mutes new members till they tap on a button thereby verifying they're human.\n"
-    "â€¢ `/welcomemute off`*:* turns off welcomemute.\n"
+    "• `/welcomemute soft`*:* restricts new members from sending media for 24 hours.\n"
+    "• `/welcomemute strong`*:* mutes new members till they tap on a button thereby verifying they're human.\n"
+    "• `/welcomemute off`*:* turns off welcomemute.\n"
     "*Note:* Strong mode kicks a user from the chat if they dont verify in 120seconds. They can always rejoin though"
 )
 

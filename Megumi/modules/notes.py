@@ -187,21 +187,6 @@ def hash_get(update: Update, context: CallbackContext):
     no_hash = fst_word[1:].lower()
     get(update, context, no_hash, show_none=False)
 
-
-@run_async
-def slash_get(update: Update, context: CallbackContext):
-    message, chat_id = update.effective_message.text, update.effective_chat.id
-    no_slash = message[1:]
-    note_list = sql.get_all_chat_notes(chat_id)
-
-    try:
-        noteid = note_list[int(no_slash) - 1]
-        note_name = str(noteid).strip(">").split()[1]
-        get(update, context, note_name, show_none=False)
-    except IndexError:
-        update.effective_message.reply_text("Wrong Note ID 😾")
-
-
 @run_async
 @user_admin
 def save(update: Update, context: CallbackContext):
@@ -255,26 +240,24 @@ def clear(update: Update, context: CallbackContext):
 @run_async
 def list_notes(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
+    chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user  # type: Optional[User]
     note_list = sql.get_all_chat_notes(chat_id)
-    notes = len(note_list) + 1
-    msg = "Get note by /id or #notename \n\n  *ID*    *Note* \n"
-    for note_id, note in zip(range(1, notes), note_list):
-        if note_id < 10:
-            note_name = f"`{note_id:2}.`  `#{(note.name.lower())}`\n"
-        else:
-            note_name = f"`{note_id}.`  `#{(note.name.lower())}`\n"
+    chat_name = chat.title or chat.first or chat.username
+    msg = "*List of notes in {}:*\n"
+    des = "You can get notes by using `/get notename`, or `#notename`.\n"
+    for note in note_list:
+        note_name = (" • `#{}`\n".format(note.name))
         if len(msg) + len(note_name) > MAX_MESSAGE_LENGTH:
-            update.effective_message.reply_text(
-                msg, parse_mode=ParseMode.MARKDOWN)
+            update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
             msg = ""
         msg += note_name
 
-    if not note_list:
+    if msg == "*List of notes in {}:*\n\n":
         update.effective_message.reply_text("No notes in this chat!")
 
     elif len(msg) != 0:
-        update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
-
+        update.effective_message.reply_text(msg.format(chat_name) + des, parse_mode=ParseMode.MARKDOWN)
 
 def __import_data__(chat_id, data):
     failures = []
@@ -439,7 +422,6 @@ __mod_name__ = "Notes"
 
 GET_HANDLER = CommandHandler("get", cmd_get)
 HASH_GET_HANDLER = MessageHandler(Filters.regex(r"^#[^\s]+"), hash_get)
-SLASH_GET_HANDLER = MessageHandler(Filters.regex(r"^\/[0-9]*$"), slash_get)
 SAVE_HANDLER = CommandHandler("save", save)
 DELETE_HANDLER = CommandHandler("clear", clear)
 
@@ -452,4 +434,3 @@ dispatcher.add_handler(SAVE_HANDLER)
 dispatcher.add_handler(LIST_HANDLER)
 dispatcher.add_handler(DELETE_HANDLER)
 dispatcher.add_handler(HASH_GET_HANDLER)
-dispatcher.add_handler(SLASH_GET_HANDLER)
