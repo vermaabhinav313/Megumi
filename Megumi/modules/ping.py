@@ -7,14 +7,6 @@ from Megumi.modules.disable import DisableAbleCommandHandler
 from telegram import ParseMode, Update
 from telegram.ext import CallbackContext, run_async
 
-sites_list = {
-    "Telegram": "https://api.telegram.org",
-    "Kaizoku": "https://animekaizoku.com",
-    "Kayo": "https://animekayo.com",
-    "Jikan": "https://api.jikan.moe/v3"
-}
-
-
 def get_readable_time(seconds: int) -> str:
     count = 0
     ping_time = ""
@@ -54,15 +46,6 @@ def ping_func(to_ping: List[str]) -> List[str]:
         end_time = time.time()
         ping_time = str(round((end_time - start_time), 2)) + "s"
 
-        pinged_site = f"<b>{each_ping}</b>"
-
-        if each_ping == "Kaizoku" or each_ping == "Kayo":
-            pinged_site = f'<a href="{sites_list[each_ping]}">{each_ping}</a>'
-            ping_time = f"<code>{ping_time} (Status: {r.status_code})</code>"
-
-        ping_text = f"{pinged_site}: <code>{ping_time}</code>"
-        ping_result.append(ping_text)
-
     return ping_result
 
 
@@ -79,32 +62,10 @@ def ping(update: Update, context: CallbackContext):
     update.effective_message.reply_text(reply_msg, parse_mode=ParseMode.HTML)
 
 
-@run_async
-def pingall(update: Update, context: CallbackContext):
-    to_ping = ["Kaizoku", "Kayo", "Telegram", "Jikan"]
-    pinged_list = ping_func(to_ping)
-    pinged_list.insert(2, '')
-    uptime = get_readable_time((time.time() - StartTime))
-
-    reply_msg = "⏱Ping results are:\n"
-    reply_msg += "\n".join(pinged_list)
-    reply_msg += '\n<b>Service uptime:</b> <code>{}</code>'.format(uptime)
-
-    update.effective_message.reply_text(
-        reply_msg, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-
-
-__help__ = """
- • `/ping`*:* get ping time of bot to telegram server
- • `/pingall`*:* get all listed ping time
-"""
-
 PING_HANDLER = DisableAbleCommandHandler("ping", ping)
-PINGALL_HANDLER = DisableAbleCommandHandler("pingall", pingall)
 
 dispatcher.add_handler(PING_HANDLER)
-dispatcher.add_handler(PINGALL_HANDLER)
 
 __mod_name__ = "Ping"
-__command_list__ = ["ping", "pingall"]
-__handlers__ = [PING_HANDLER, PINGALL_HANDLER]
+__command_list__ = ["ping"]
+__handlers__ = [PING_HANDLER]

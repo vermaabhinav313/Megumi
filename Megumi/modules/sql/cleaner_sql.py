@@ -136,6 +136,7 @@ def global_ignore_command(command):
 
 
 def global_unignore_command(command):
+
     command = command.lower()
     with CLEANER_GLOBAL_LOCK:
         unignored = SESSION.query(CleanerBlueTextGlobal).get(str(command))
@@ -144,7 +145,7 @@ def global_unignore_command(command):
             if command in GLOBAL_IGNORE_COMMANDS:
                 GLOBAL_IGNORE_COMMANDS.remove(command)
 
-            SESSION.delete(command)
+            SESSION.delete(unignored)
             SESSION.commit()
             return True
 
@@ -181,32 +182,25 @@ def get_all_ignored(chat_id):
 
 
 def __load_cleaner_list():
+
     global GLOBAL_IGNORE_COMMANDS
     global CLEANER_CHATS
 
     try:
-        GLOBAL_IGNORE_COMMANDS = {
-            int(x.command) for x in SESSION.query(CleanerBlueTextGlobal).all()
-        }
+        GLOBAL_IGNORE_COMMANDS = {x.command for x in SESSION.query(CleanerBlueTextGlobal).all()}
     finally:
         SESSION.close()
 
     try:
         for x in SESSION.query(CleanerBlueTextChatSettings).all():
-            CLEANER_CHATS.setdefault(x.chat_id, {
-                "setting": False,
-                "commands": set()
-            })
+            CLEANER_CHATS.setdefault(x.chat_id, {"setting": False, "commands": set()})
             CLEANER_CHATS[x.chat_id]["setting"] = x.is_enable
     finally:
         SESSION.close()
 
     try:
         for x in SESSION.query(CleanerBlueTextChat).all():
-            CLEANER_CHATS.setdefault(x.chat_id, {
-                "setting": False,
-                "commands": set()
-            })
+            CLEANER_CHATS.setdefault(x.chat_id, {"setting": False, "commands": set()})
             CLEANER_CHATS[x.chat_id]["commands"].add(x.command)
     finally:
         SESSION.close()
