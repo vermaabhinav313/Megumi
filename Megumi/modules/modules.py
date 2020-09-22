@@ -1,6 +1,14 @@
 import importlib
 
 from Megumi import dispatcher
+
+import html
+from typing import Optional
+
+from Megumi import LOGGER, TIGER_USERS, dispatcher
+from Megumi.modules.helper_funcs.chat_status import (bot_admin,
+                                                           can_restrict,
+                                                           connection_status)
 from Megumi.__main__ import (CHAT_SETTINGS, DATA_EXPORT, DATA_IMPORT,
                                    HELPABLE, IMPORTED, MIGRATEABLE, STATS,
                                    USER_INFO, USER_SETTINGS)

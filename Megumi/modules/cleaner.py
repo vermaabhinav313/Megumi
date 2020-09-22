@@ -62,7 +62,7 @@ def clean_blue_text_must_click(update: Update, context: CallbackContext):
 def set_blue_text_must_click(update: Update, context: CallbackContext):
     chat = update.effective_chat
     message = update.effective_message
-    bot, args = context.bot, context.args
+    args = context.args
     if len(args) >= 1:
         val = args[0].lower()
         if val in ('off', 'no'):

@@ -2054,7 +2054,7 @@ def fed_owner_help(update: Update, context: CallbackContext):
  • `/setfedlog <fed_id>`*:* Sets the group as a fed log report base for the federation.
  • `/unsetfedlog <fed_id>`*:* Removed the group as a fed log report base for the federation.
  • `/fbroadcast <message>`*:* Broadcasts a messages to all groups that have joined your fed.
- • `/fedsubs`*:* Shows the feds your group is subscribed to. `(broken rn)`""",
+ • `/fedsubs`*:* Shows the feds your group is subscribed to.""",
         parse_mode=ParseMode.MARKDOWN)
 
 

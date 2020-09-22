@@ -243,7 +243,7 @@ def list_notes(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
     note_list = sql.get_all_chat_notes(chat_id)
-    chat_name = chat.title or chat.first or chat.username
+    chat_name = chat.title or chat.username
     msg = "*List of notes in {}:*\n"
     des = "You can get notes by using `/get notename`, or `#notename`.\n"
     for note in note_list:

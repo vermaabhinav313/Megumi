@@ -37,7 +37,7 @@ def warn(user: User,
          message: Message,
          warner: User = None) -> str:
     if is_user_admin(chat, user.id):
-        # message.reply_text("Damn admins, They are too far to be One Punched!")
+        # message.reply_text("Damn admins, They are too far to be One kicked!")
         return
 
     if user.id in TIGER_USERS:
@@ -67,13 +67,13 @@ def warn(user: User,
     num_warns, reasons = sql.warn_user(user.id, chat.id, reason)
     if num_warns >= limit:
         sql.reset_warns(user.id, chat.id)
-        if soft_warn:  # punch
+        if soft_warn:  # kick
             chat.unban_member(user.id)
-            reply = f"{limit} warnings, *Punches {mention_html(user.id, user.first_name)} with a normal punch!* "
+            reply = f"{limit} warnings, *Kicks {mention_html(user.id, user.first_name)} with a normal kick!* "
 
         else:  # ban
             chat.kick_member(user.id)
-            reply = f"{limit} warnings, *Punches {mention_html(user.id, user.first_name)} with a Serious Punch* "
+            reply = f"{limit} warnings, *kicks {mention_html(user.id, user.first_name)} with a Serious kick* "
 
         for warn_reason in reasons:
             reply += f"\n - {html.escape(warn_reason)}"
@@ -93,7 +93,7 @@ def warn(user: User,
                 "Remove warn", callback_data="rm_warn({})".format(user.id))
         }])
 
-        reply = f"{mention_html(user.id, user.first_name)} has {num_warns}/{limit} warnings... watch out!"
+        reply = f"{mention_html(user.id, user.first_name)} has {num_warns}/{limit} warnings be careful!"
         if reason:
             reply += f"\nReason for last warn:\n{html.escape(reason)}"
 
@@ -388,18 +388,18 @@ def set_warn_strength(update: Update, context: CallbackContext):
             return (
                 f"<b>{html.escape(chat.title)}:</b>\n"
                 f"<b>Admin:</b> {mention_html(user.id, user.first_name)}\n"
-                f"Has enabled strong warns. Users will be seriously punched.(banned)"
+                f"Has enabled strong warns. Users will be seriously kicked.(banned)"
             )
 
         elif args[0].lower() in ("off", "no"):
             sql.set_warn_strength(chat.id, True)
             msg.reply_text(
-                "Too many warns will now result in a normal punch! Users will be able to join again after."
+                "Too many warns will now result in a normal kick! Users will be able to join again after."
             )
             return (
                 f"<b>{html.escape(chat.title)}:</b>\n"
                 f"<b>Admin:</b> {mention_html(user.id, user.first_name)}\n"
-                f"Has disabled strong punches. I will use normal punch on users."
+                f"Has disabled strong kicks. I will use normal kick on users."
             )
 
         else:
@@ -408,7 +408,7 @@ def set_warn_strength(update: Update, context: CallbackContext):
         limit, soft_warn = sql.get_warn_setting(chat.id)
         if soft_warn:
             msg.reply_text(
-                "Warns are currently set to *punch* users when they exceed the limits.",
+                "Warns are currently set to *kick* users when they exceed the limits.",
                 parse_mode=ParseMode.MARKDOWN)
         else:
             msg.reply_text(
@@ -454,7 +454,7 @@ __help__ = """
 be a sentence, encompass it with quotes, as such: `/addwarn "very angry" This is an angry user`. 
  • `/nowarn <keyword>`*:* stop a warning filter
  • `/warnlimit <num>`*:* set the warning limit
- • `/strongwarn <on/yes/off/no>`*:* If set to on, exceeding the warn limit will result in a ban. Else, will just punch.
+ • `/strongwarn <on/yes/off/no>`*:* If set to on, exceeding the warn limit will result in a ban. Else, will just kick.
 """
 
 __mod_name__ = "Warnings"

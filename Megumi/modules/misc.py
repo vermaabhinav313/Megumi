@@ -19,7 +19,6 @@ from Megumi.modules.helper_funcs.extraction import extract_user
 from telegram import MessageEntity, ParseMode, Update
 from telegram.error import BadRequest
 from emoji import UNICODE_EMOJI
-from googletrans import LANGUAGES, Translator
 from wikipedia.exceptions import DisambiguationError, PageError
 from telegram.ext import CallbackContext, CommandHandler, Filters, run_async
 from telegram.utils.helpers import mention_html
@@ -97,6 +96,35 @@ def convert(update: Update, context: CallbackContext):
         update.effective_message.reply_text(
             f"*Invalid Args!!:* Required 3 But Passed {len(args) -1}",
             parse_mode=ParseMode.MARKDOWN)
+
+@run_async
+def paste(update: Update, context: CallbackContext):
+    args = context.args
+    message = update.effective_message
+
+    if message.reply_to_message:
+        data = message.reply_to_message.text
+
+    elif len(args) >= 1:
+        data = message.text.split(None, 1)[1]
+
+    else:
+        message.reply_text("What am I supposed to do with this?")
+        return
+
+    key = requests.post(
+        'https://nekobin.com/api/documents', json={
+            "content": data
+        }).json().get('result').get('key')
+
+    url = f'https://nekobin.com/{key}'
+
+    reply_text = f'Nekofied to *Nekobin* : {url}'
+
+    message.reply_text(
+        reply_text,
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=True)
 
 @run_async
 def wiki(update: Update, context: CallbackContext):
@@ -505,12 +533,10 @@ __help__ = """
  • `/weebify <text>`*:* returns a weebified text.
  • `/ud <word>`*:* Type the word or expression you want to search use.
  • `/info`*:* get information about a user.
+ • `/paste`*:* Do a paste at `neko.bin`
  • `/wiki <query>`*:* wiki your query.
  • `/markdownhelp`*:* quick summary of how markdown works in telegram - can only be called in private chats.
- • `/tr` or `/tl` (language code) as reply to a long message.
-*Example:* `/tr en`*:* translates something to english. 
-   `/tr hi-en`*:* translates hindi to english.
-• `/cash`*:* currency converter
+ • `/cash`*:* currency converter
 
  *Example syntax:*
  `/cash 1 USD INR`  _OR_   `/cash 1 usd inr`
@@ -522,12 +548,12 @@ ID_HANDLER = DisableAbleCommandHandler("id", get_id)
 GIFID_HANDLER = DisableAbleCommandHandler("gifid", gifid)
 INFO_HANDLER = DisableAbleCommandHandler(["info"], info)
 UD_HANDLER = DisableAbleCommandHandler(["ud"], ud)
+PASTE_HANDLER = DisableAbleCommandHandler("paste", paste)
 ECHO_HANDLER = DisableAbleCommandHandler("echo", echo, filters=Filters.group)
 WEEBIFY_HANDLER = DisableAbleCommandHandler("weebify", weebify)
 MD_HELP_HANDLER = CommandHandler(
     "markdownhelp", markdown_help, filters=Filters.private)
 PAT_HANDLER = DisableAbleCommandHandler("pat", pat)
-TRANSLATE_HANDLER = DisableAbleCommandHandler(["tr", "tl"], totranslate)
 WIKI_HANDLER = DisableAbleCommandHandler("wiki", wiki)
 CONVERTER_HANDLER = CommandHandler('cash', convert)
 SNIPE_HANDLER = CommandHandler(
@@ -553,13 +579,14 @@ dispatcher.add_handler(STATS_HANDLER)
 dispatcher.add_handler(MD_HELP_HANDLER)
 dispatcher.add_handler(WIKI_HANDLER)
 dispatcher.add_handler(CONVERTER_HANDLER)
+dispatcher.add_handler(PASTE_HANDLER)
 
 __mod_name__ = "Misc"
 __command_list__ = ["id", "info", "echo", "pat", "snipe", "weebify", "ud", 
 "runs", "slap", "roll", "toss", "shrug", "bluetext", "rlg", "decide",
-    "table", "react", "wiki","tr", "cash"]
+    "table", "react", "wiki","tr", "cash", "paste"]
 __handlers__ = [
     ID_HANDLER, GIFID_HANDLER, INFO_HANDLER, ECHO_HANDLER, MD_HELP_HANDLER,
     SNIPE_HANDLER, PAT_HANDLER, STATS_HANDLER, WEEBIFY_HANDLER, UD_HANDLER,
-    WIKI_HANDLER, TRANSLATE_HANDLER, CONVERTER_HANDLER
+    WIKI_HANDLER, CONVERTER_HANDLER, PASTE_HANDLER
 ]
