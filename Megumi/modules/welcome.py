@@ -864,8 +864,6 @@ Commands:
  - /rmjoin <on/off>: when someone joins, try to delete the *user* joined the group message.
  - /safemode <on/off>: all users that join, get muted; a button gets added to the welcome message for them to unmute themselves. This proves they aren't a bot! This will also restrict users ability to post media for 24 hours.
  - /welcomehelp: view more formatting information for custom welcome/goodbye messages.
- - /setcas <on/off/true/false>: Enables/disables CAS Checking on welcome
- - /getcas: Gets the current CAS settings
  - /setban <on/off/true/false>: Enables/disables autoban on CAS banned user detected.
  - /setdefense <on/off/true/false>: Turns on defense mode, will kick any new user automatically.
  - /getdefense: gets the current defense setting
@@ -873,7 +871,7 @@ Commands:
  - /setkicktime: sets new auto-kick time value (between 30 and 900 seconds)
 """.format(WELC_HELP_TXT)
 
-__mod_name__ = "Welcomes/Goodbyes"
+__mod_name__ = "Greetings"
 
 NEW_MEM_HANDLER = MessageHandler(Filters.status_update.new_chat_members, new_member)
 LEFT_MEM_HANDLER = MessageHandler(Filters.status_update.left_chat_member, left_member)

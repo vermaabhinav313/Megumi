@@ -15,6 +15,19 @@ from telegram.ext import CallbackContext, run_async
 def runs(update: Update, context: CallbackContext):
     update.effective_message.reply_text(random.choice(fun_strings.RUN_STRINGS))
 
+@run_async
+def shout(update: Update, context: CallbackContext):
+    args = context.args
+    text = " ".join(args)
+    result = []
+    result.append(' '.join([s for s in text]))
+    for pos, symbol in enumerate(text[1:]):
+        result.append(symbol + ' ' + '  ' * pos + symbol)
+    result = list("\n".join(result))
+    result[0] = text[0]
+    result = "".join(result)
+    msg = "```\n" + result + "```"
+    return update.effective_message.reply_text(msg, parse_mode="MARKDOWN")
 
 @run_async
 def slap(update: Update, context: CallbackContext):
@@ -128,11 +141,13 @@ __help__ = """
  • `/toss`*:* Tosses A coin
  • `/bluetext`*:* check urself :V
  • `/roll`*:* Roll a dice.
+ • `/shout <keyword>`*:* write anything you want to give loud shout.
  • `/rlg`*:* Join ears,nose,mouth and create an emo ;-;
 """
 
 RUNS_HANDLER = DisableAbleCommandHandler("runs", runs)
 SLAP_HANDLER = DisableAbleCommandHandler("slap", slap)
+SHOUT_HANDLER = DisableAbleCommandHandler("shout", shout)
 ROLL_HANDLER = DisableAbleCommandHandler("roll", roll)
 TOSS_HANDLER = DisableAbleCommandHandler("toss", toss)
 SHRUG_HANDLER = DisableAbleCommandHandler("shrug", shrug)
@@ -144,6 +159,7 @@ TABLE_HANDLER = DisableAbleCommandHandler("table", table)
 dispatcher.add_handler(RUNS_HANDLER)
 dispatcher.add_handler(SLAP_HANDLER)
 dispatcher.add_handler(ROLL_HANDLER)
+dispatcher.add_handler(SHOUT_HANDLER)
 dispatcher.add_handler(TOSS_HANDLER)
 dispatcher.add_handler(SHRUG_HANDLER)
 dispatcher.add_handler(BLUETEXT_HANDLER)
@@ -154,9 +170,9 @@ dispatcher.add_handler(TABLE_HANDLER)
 __mod_name__ = "Fun"
 __command_list__ = [
     "runs", "slap", "roll", "toss", "shrug", "bluetext", "rlg", "decide",
-    "table"
+    "table", "shout"
 ]
 __handlers__ = [
     RUNS_HANDLER, SLAP_HANDLER, ROLL_HANDLER, TOSS_HANDLER, SHRUG_HANDLER,
-    BLUETEXT_HANDLER, RLG_HANDLER, DECIDE_HANDLER, TABLE_HANDLER
+    BLUETEXT_HANDLER, RLG_HANDLER, DECIDE_HANDLER, TABLE_HANDLER, SHOUT_HANDLER
 ]

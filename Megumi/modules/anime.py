@@ -185,7 +185,7 @@ def anime(update: Update, context: CallbackContext):
     message = update.effective_message
     search = message.text.split(' ', 1)
     if len(search) == 1:
-        update.effective_message.reply_text('Format : /anime < anime name >')
+        update.effective_message.reply_text('Format: /anime <anime name>')
         return
     else:
         search = search[1]
@@ -253,7 +253,7 @@ def character(update: Update, context: CallbackContext):
     search = message.text.split(' ', 1)
     if len(search) == 1:
         update.effective_message.reply_text(
-            'Format : /character < character name >')
+            'Format: /character <character name>')
         return
     search = search[1]
     variables = {'query': search}
@@ -286,7 +286,7 @@ def manga(update: Update, context: CallbackContext):
     message = update.effective_message
     search = message.text.split(' ', 1)
     if len(search) == 1:
-        update.effective_message.reply_text('Format : /manga < manga name >')
+        update.effective_message.reply_text('Format: /manga <manga name>')
         return
     search = search[1]
     variables = {'search': search}
@@ -356,7 +356,7 @@ def user(update: Update, context: CallbackContext):
         if message.reply_to_message:
             search_query = message.reply_to_message.text
         else:
-            update.effective_message.reply_text("Format : /user <username>")
+            update.effective_message.reply_text("Format: /user <username>")
             return
 
     jikan = jikanpy.jikan.Jikan()

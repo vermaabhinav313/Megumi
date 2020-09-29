@@ -93,7 +93,7 @@ def warn(user: User,
                 "Remove warn", callback_data="rm_warn({})".format(user.id))
         }])
 
-        reply = f"{mention_html(user.id, user.first_name)} has {num_warns}/{limit} warnings be careful!"
+        reply = f"User {mention_html(user.id, user.first_name)} has {num_warns}/{limit} warnings; be careful!"
         if reason:
             reply += f"\nReason for last warn:\n{html.escape(reason)}"
 
@@ -127,7 +127,7 @@ def warn(user: User,
 def button(update: Update, context: CallbackContext) -> str:
     query: Optional[CallbackQuery] = update.callback_query
     user: Optional[User] = update.effective_user
-    match = re.match(r"rm_warn\((.+?)\)", query.data)
+    match = re.match(r"rm_warn\((.+?)\)", query.data)    
     if match:
         user_id = match.group(1)
         chat: Optional[Chat] = update.effective_chat
@@ -446,7 +446,6 @@ def __chat_settings__(chat_id, user_id):
 __help__ = """
  • `/warns <userhandle>`*:* get a user's number, and reason, of warns.
  • `/warnlist`*:* list of all current warning filters
-
 *Admins only:*
  • `/warn <userhandle>`*:* warn a user. After 3 warns, the user will be banned from the group. Can also be used as a reply.
  • `/resetwarn <userhandle>`*:* reset the warns for a user. Can also be used as a reply.

@@ -1,24 +1,29 @@
 import html
 import re
+import datetime
+from typing import List
 import wikipedia
 import random
-
+from tswift import Song
+from telegram import ChatAction
+from feedparser import parse
 import json
 import urllib.request
 import urllib.parse
-
 import requests
-from Megumi import CASH_API_KEY
 from Megumi import (DEV_USERS, OWNER_ID, SUDO_USERS, SUPPORT_USERS,
-                          TIGER_USERS, WHITELIST_USERS, dispatcher)
+                          TIGER_USERS, WHITELIST_USERS, TIME_API_KEY, dispatcher, updater)
 from Megumi.__main__ import STATS, TOKEN, USER_INFO
 from Megumi.modules.disable import DisableAbleCommandHandler
 from Megumi.modules.helper_funcs.filters import CustomFilters
 from Megumi.modules.helper_funcs.chat_status import sudo_plus, user_admin
 from Megumi.modules.helper_funcs.extraction import extract_user
-from telegram import MessageEntity, ParseMode, Update
+from telegram import MessageEntity, ParseMode, Update, constants
 from telegram.error import BadRequest
 from emoji import UNICODE_EMOJI
+from googletrans import LANGUAGES, Translator
+from Megumi.modules.helper_funcs.alternate import typing_action
+from Megumi.modules.sql import rss_sql as sql
 from wikipedia.exceptions import DisambiguationError, PageError
 from telegram.ext import CallbackContext, CommandHandler, Filters, run_async
 from telegram.utils.helpers import mention_html
@@ -57,47 +62,6 @@ weebyfont = [
 ]
 
 @run_async
-def convert(update: Update, context: CallbackContext):
-    args = update.effective_message.text.split(" ")
-
-    if len(args) == 4:
-        try:
-            orig_cur_amount = float(args[1])
-
-        except ValueError:
-            update.effective_message.reply_text("Invalid Amount Of Currency")
-            return
-
-        orig_cur = args[2].upper()
-
-        new_cur = args[3].upper()
-
-        request_url = (f"https://www.alphavantage.co/query"
-                       f"?function=CURRENCY_EXCHANGE_RATE"
-                       f"&from_currency={orig_cur}"
-                       f"&to_currency={new_cur}"
-                       f"&apikey={CASH_API_KEY}")
-        response = requests.get(request_url).json()
-        try:
-            current_rate = float(
-                response['Realtime Currency Exchange Rate']['5. Exchange Rate'])
-        except KeyError:
-            update.effective_message.reply_text("Currency Not Supported.")
-            return
-        new_cur_amount = round(orig_cur_amount * current_rate, 5)
-        update.effective_message.reply_text(
-            f"{orig_cur_amount} {orig_cur} = {new_cur_amount} {new_cur}")
-
-    elif len(args) == 1:
-        update.effective_message.reply_text(
-            __help__, parse_mode=ParseMode.MARKDOWN)
-
-    else:
-        update.effective_message.reply_text(
-            f"*Invalid Args!!:* Required 3 But Passed {len(args) -1}",
-            parse_mode=ParseMode.MARKDOWN)
-
-@run_async
 def paste(update: Update, context: CallbackContext):
     args = context.args
     message = update.effective_message
@@ -125,6 +89,481 @@ def paste(update: Update, context: CallbackContext):
         reply_text,
         parse_mode=ParseMode.MARKDOWN,
         disable_web_page_preview=True)
+
+@run_async
+def totranslate(update: Update, context: CallbackContext):
+    msg = update.effective_message
+    problem_lang_code = []
+    for key in LANGUAGES:
+        if "-" in key:
+            problem_lang_code.append(key)
+    try:
+        if msg.reply_to_message:
+            args = update.effective_message.text.split(None, 1)
+            if msg.reply_to_message.text:
+                text = msg.reply_to_message.text
+            elif msg.reply_to_message.caption:
+                text = msg.reply_to_message.caption
+
+            message = update.effective_message
+            dest_lang = None
+
+            try:
+                source_lang = args[1].split(None, 1)[0]
+            except:
+                source_lang = "en"
+
+            if source_lang.count('-') == 2:
+                for lang in problem_lang_code:
+                    if lang in source_lang:
+                        if source_lang.startswith(lang):
+                            dest_lang = source_lang.rsplit("-", 1)[1]
+                            source_lang = source_lang.rsplit("-", 1)[0]
+                        else:
+                            dest_lang = source_lang.split("-", 1)[1]
+                            source_lang = source_lang.split("-", 1)[0]
+            elif source_lang.count('-') == 1:
+                for lang in problem_lang_code:
+                    if lang in source_lang:
+                        dest_lang = source_lang
+                        source_lang = None
+                        break
+                if dest_lang is None:
+                    dest_lang = source_lang.split("-")[1]
+                    source_lang = source_lang.split("-")[0]
+            else:
+                dest_lang = source_lang
+                source_lang = None
+
+            exclude_list = UNICODE_EMOJI.keys()
+            for emoji in exclude_list:
+                if emoji in text:
+                    text = text.replace(emoji, '')
+
+            trl = Translator()
+            if source_lang is None:
+                detection = trl.detect(text)
+                tekstr = trl.translate(text, dest=dest_lang)
+                return message.reply_text(
+                    f"Translated from `{detection.lang}` to `{dest_lang}`:\n`{tekstr.text}`",
+                    parse_mode=ParseMode.MARKDOWN)
+            else:
+                tekstr = trl.translate(text, dest=dest_lang, src=source_lang)
+                message.reply_text(
+                    f"Translated from `{source_lang}` to `{dest_lang}`:\n`{tekstr.text}`",
+                    parse_mode=ParseMode.MARKDOWN)
+        else:
+            args = update.effective_message.text.split(None, 2)
+            message = update.effective_message
+            source_lang = args[1]
+            text = args[2]
+            exclude_list = UNICODE_EMOJI.keys()
+            for emoji in exclude_list:
+                if emoji in text:
+                    text = text.replace(emoji, '')
+            dest_lang = None
+            temp_source_lang = source_lang
+            if temp_source_lang.count('-') == 2:
+                for lang in problem_lang_code:
+                    if lang in temp_source_lang:
+                        if temp_source_lang.startswith(lang):
+                            dest_lang = temp_source_lang.rsplit("-", 1)[1]
+                            source_lang = temp_source_lang.rsplit("-", 1)[0]
+                        else:
+                            dest_lang = temp_source_lang.split("-", 1)[1]
+                            source_lang = temp_source_lang.split("-", 1)[0]
+            elif temp_source_lang.count('-') == 1:
+                for lang in problem_lang_code:
+                    if lang in temp_source_lang:
+                        dest_lang = None
+                        break
+                    else:
+                        dest_lang = temp_source_lang.split("-")[1]
+                        source_lang = temp_source_lang.split("-")[0]
+            trl = Translator()
+            if dest_lang is None:
+                detection = trl.detect(text)
+                tekstr = trl.translate(text, dest=source_lang)
+                return message.reply_text(
+                    "Translated from `{}` to `{}`:\n`{}`".format(
+                        detection.lang, source_lang, tekstr.text),
+                    parse_mode=ParseMode.MARKDOWN)
+            else:
+                tekstr = trl.translate(text, dest=dest_lang, src=source_lang)
+                message.reply_text(
+                    "Translated from `{}` to `{}`:\n`{}`".format(
+                        source_lang, dest_lang, tekstr.text),
+                    parse_mode=ParseMode.MARKDOWN)
+
+    except IndexError:
+        update.effective_message.reply_text(
+            "Reply to messages or write messages from other languages ​​for translating into the intended language\n\n"
+            "Example: `/tr en-ml` to translate from English to Malayalam\n"
+            "Or use: `/tr ml` for automatic detection and translating it into Malayalam.\n"
+            "See [List of Language Codes](t.me/OnePunchSupport/12823) for a list of language codes.",
+            parse_mode="markdown",
+            disable_web_page_preview=True)
+    except ValueError:
+        update.effective_message.reply_text(
+            "The intended language is not found!")
+    else:
+        return
+
+def show_url(update: Update, context: CallbackContext):
+    tg_chat_id = str(update.effective_chat.id)
+    bot = context.bot
+    args = context.args
+    if len(args) >= 1:
+        tg_feed_link = args[0]
+        link_processed = parse(tg_feed_link)
+
+        if link_processed.bozo == 0:
+            feed_title = link_processed.feed.get("title", default="Unknown")
+            feed_description = "<i>{}</i>".format(
+                re.sub(
+                    '<[^<]+?>', '',
+                    link_processed.feed.get("description", default="Unknown")))
+            feed_link = link_processed.feed.get("link", default="Unknown")
+
+            feed_message = "<b>Feed Title:</b> \n{}" \
+                           "\n\n<b>Feed Description:</b> \n{}" \
+                           "\n\n<b>Feed Link:</b> \n{}".format(html.escape(feed_title),
+                                                               feed_description,
+                                                               html.escape(feed_link))
+
+            if len(link_processed.entries) >= 1:
+                entry_title = link_processed.entries[0].get(
+                    "title", default="Unknown")
+                entry_description = "<i>{}</i>".format(
+                    re.sub(
+                        '<[^<]+?>', '', link_processed.entries[0].get(
+                            "description", default="Unknown")))
+                entry_link = link_processed.entries[0].get(
+                    "link", default="Unknown")
+
+                entry_message = "\n\n<b>Entry Title:</b> \n{}" \
+                                "\n\n<b>Entry Description:</b> \n{}" \
+                                "\n\n<b>Entry Link:</b> \n{}".format(html.escape(entry_title),
+                                                                     entry_description,
+                                                                     html.escape(entry_link))
+                final_message = feed_message + entry_message
+
+                bot.send_message(
+                    chat_id=tg_chat_id,
+                    text=final_message,
+                    parse_mode=ParseMode.HTML)
+            else:
+                bot.send_message(
+                    chat_id=tg_chat_id,
+                    text=feed_message,
+                    parse_mode=ParseMode.HTML)
+        else:
+            update.effective_message.reply_text(
+                "This link is not an RSS Feed link")
+    else:
+        update.effective_message.reply_text("URL missing")
+
+def generate_time(to_find: str, findtype: List[str]) -> str:
+    data = requests.get(
+        f"https://api.timezonedb.com/v2.1/list-time-zone"
+        f"?key={TIME_API_KEY}"
+        f"&format=json"
+        f"&fields=countryCode,countryName,zoneName,gmtOffset,timestamp,dst"
+    ).json()
+
+    for zone in data["zones"]:
+        for eachtype in findtype:
+            if to_find in zone[eachtype].lower():
+                country_name = zone['countryName']
+                country_zone = zone['zoneName']
+                country_code = zone['countryCode']
+
+                if zone['dst'] == 1:
+                    daylight_saving = "Yes"
+                else:
+                    daylight_saving = "No"
+
+                date_fmt = r"%d-%m-%Y"
+                time_fmt = r"%H:%M:%S"
+                day_fmt = r"%A"
+                gmt_offset = zone['gmtOffset']
+                timestamp = datetime.datetime.now(
+                    datetime.timezone.utc) + datetime.timedelta(
+                        seconds=gmt_offset)
+                current_date = timestamp.strftime(date_fmt)
+                current_time = timestamp.strftime(time_fmt)
+                current_day = timestamp.strftime(day_fmt)
+
+                break
+
+    try:
+        result = (
+            f'<b>Country:</b> <code>{country_name}</code>\n'
+            f'<b>Zone Name:</b> <code>{country_zone}</code>\n'
+            f'<b>Country Code:</b> <code>{country_code}</code>\n'
+            f'<b>Daylight saving:</b> <code>{daylight_saving}</code>\n'
+            f'<b>Day:</b> <code>{current_day}</code>\n'
+            f'<b>Current Time:</b> <code>{current_time}</code>\n'
+            f'<b>Current Date:</b> <code>{current_date}</code>\n'
+            '<b>Timezones:</b> <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">List here</a>'
+        )
+    except:
+        result = None
+
+    return result
+
+@run_async
+@typing_action
+def lyrics(update: Update, context:CallbackContext):
+    msg = update.effective_message
+    args = context.args
+    query = " ".join(args)
+    song = ""
+    if not query:
+        msg.reply_text("You haven't specified which song to look for!")
+        return
+    else:
+        song = Song.find_song(query)
+        if song:
+            if song.lyrics:
+                reply = song.format()
+            else:
+                reply = "Couldn't find any lyrics for that song!"
+        else:
+            reply = "Song not found!"
+        if len(reply) > 4090:
+            with open("lyrics.txt", 'w') as f:
+                f.write(f"{reply}\n\n\nOwO UwU OmO")
+            with open("lyrics.txt", 'rb') as f:
+                msg.reply_document(document=f,
+                caption="Message length exceeded max limit! Sending as a text file.")
+        else:
+            msg.reply_text(reply)
+
+@run_async
+def gettime(update: Update, context: CallbackContext):
+    message = update.effective_message
+
+    try:
+        query = message.text.strip().split(" ", 1)[1]
+    except:
+        message.reply_text(
+            "Provide a country name/abbreviation/timezone to find.")
+        return
+    send_message = message.reply_text(
+        f"Finding timezone info for <b>{query}</b>", parse_mode=ParseMode.HTML)
+
+    query_timezone = query.lower()
+    if len(query_timezone) == 2:
+        result = generate_time(query_timezone, ["countryCode"])
+    else:
+        result = generate_time(query_timezone, ["zoneName", "countryName"])
+
+    if not result:
+        send_message.edit_text(
+            f'Timezone info not available for <b>{query}</b>\n'
+            '<b>All Timezones:</b> <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">List here</a>',
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True)
+        return
+
+    send_message.edit_text(
+        result, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+
+def list_urls(update: Update, context: CallbackContext):
+    tg_chat_id = str(update.effective_chat.id)
+    bot = context.bot
+    user_data = sql.get_urls(tg_chat_id)
+
+    # this loops gets every link from the DB based on the filter above and appends it to the list
+    links_list = [row.feed_link for row in user_data]
+
+    final_content = "\n\n".join(links_list)
+
+    # check if the length of the message is too long to be posted in 1 chat bubble
+    if len(final_content) == 0:
+        bot.send_message(
+            chat_id=tg_chat_id, text="This chat is not subscribed to any links")
+    elif len(final_content) <= constants.MAX_MESSAGE_LENGTH:
+        bot.send_message(
+            chat_id=tg_chat_id,
+            text="This chat is subscribed to the following links:\n" +
+            final_content)
+    else:
+        bot.send_message(
+            chat_id=tg_chat_id,
+            parse_mode=ParseMode.HTML,
+            text="<b>Warning:</b> The message is too long to be sent")
+
+
+@user_admin
+def add_url(update: Update, context: CallbackContext):
+    bot = context.bot
+    args = context.args
+    if len(args) >= 1:
+        chat = update.effective_chat
+        tg_chat_id = str(update.effective_chat.id)
+
+        tg_feed_link = args[0]
+
+        link_processed = parse(tg_feed_link)
+
+        # check if link is a valid RSS Feed link
+        if link_processed.bozo == 0:
+            if len(link_processed.entries[0]) >= 1:
+                tg_old_entry_link = link_processed.entries[0].link
+            else:
+                tg_old_entry_link = ""
+
+            # gather the row which contains exactly that telegram group ID and link for later comparison
+            row = sql.check_url_availability(tg_chat_id, tg_feed_link)
+
+            # check if there's an entry already added to DB by the same user in the same group with the same link
+            if row:
+                update.effective_message.reply_text(
+                    "This URL has already been added")
+            else:
+                sql.add_url(tg_chat_id, tg_feed_link, tg_old_entry_link)
+
+                update.effective_message.reply_text("Added URL to subscription")
+        else:
+            update.effective_message.reply_text(
+                "This link is not an RSS Feed link")
+    else:
+        update.effective_message.reply_text("URL missing")
+
+
+@user_admin
+def remove_url(update: Update, context: CallbackContext):
+    bot = context.bot
+    args = context.args
+    if len(args) >= 1:
+        tg_chat_id = str(update.effective_chat.id)
+
+        tg_feed_link = args[0]
+
+        link_processed = parse(tg_feed_link)
+
+        if link_processed.bozo == 0:
+            user_data = sql.check_url_availability(tg_chat_id, tg_feed_link)
+
+            if user_data:
+                sql.remove_url(tg_chat_id, tg_feed_link)
+
+                update.effective_message.reply_text(
+                    "Removed URL from subscription")
+            else:
+                update.effective_message.reply_text(
+                    "You haven't subscribed to this URL yet")
+        else:
+            update.effective_message.reply_text(
+                "This link is not an RSS Feed link")
+    else:
+        update.effective_message.reply_text("URL missing")
+
+
+def rss_update(context: CallbackContext):
+    user_data = sql.get_all()
+    job = context.job
+    bot = context.bot
+    # this loop checks for every row in the DB
+    for row in user_data:
+        row_id = row.id
+        tg_chat_id = row.chat_id
+        tg_feed_link = row.feed_link
+
+        feed_processed = parse(tg_feed_link)
+
+        tg_old_entry_link = row.old_entry_link
+
+        new_entry_links = []
+        new_entry_titles = []
+
+        # this loop checks for every entry from the RSS Feed link from the DB row
+        for entry in feed_processed.entries:
+            # check if there are any new updates to the RSS Feed from the old entry
+            if entry.link != tg_old_entry_link:
+                new_entry_links.append(entry.link)
+                new_entry_titles.append(entry.title)
+            else:
+                break
+
+        # check if there's any new entries queued from the last check
+        if new_entry_links:
+            sql.update_url(row_id, new_entry_links)
+        else:
+            pass
+
+        if len(new_entry_links) < 5:
+            # this loop sends every new update to each user from each group based on the DB entries
+            for link, title in zip(
+                    reversed(new_entry_links), reversed(new_entry_titles)):
+                final_message = "<b>{}</b>\n\n{}".format(
+                    html.escape(title), html.escape(link))
+
+                if len(final_message) <= constants.MAX_MESSAGE_LENGTH:
+                    bot.send_message(
+                        chat_id=tg_chat_id,
+                        text=final_message,
+                        parse_mode=ParseMode.HTML)
+                else:
+                    bot.send_message(
+                        chat_id=tg_chat_id,
+                        text="<b>Warning:</b> The message is too long to be sent",
+                        parse_mode=ParseMode.HTML)
+        else:
+            for link, title in zip(
+                    reversed(new_entry_links[-5:]),
+                    reversed(new_entry_titles[-5:])):
+                final_message = "<b>{}</b>\n\n{}".format(
+                    html.escape(title), html.escape(link))
+
+                if len(final_message) <= constants.MAX_MESSAGE_LENGTH:
+                    bot.send_message(
+                        chat_id=tg_chat_id,
+                        text=final_message,
+                        parse_mode=ParseMode.HTML)
+                else:
+                    bot.send_message(
+                        chat_id=tg_chat_id,
+                        text="<b>Warning:</b> The message is too long to be sent",
+                        parse_mode=ParseMode.HTML)
+
+            bot.send_message(
+                chat_id=tg_chat_id,
+                parse_mode=ParseMode.HTML,
+                text="<b>Warning: </b>{} occurrences have been left out to prevent spam"
+                .format(len(new_entry_links) - 5))
+
+
+def rss_set(context: CallbackContext):
+    user_data = sql.get_all()
+    bot, job = context.bot, context.job
+    # this loop checks for every row in the DB
+    for row in user_data:
+        row_id = row.id
+        tg_feed_link = row.feed_link
+        tg_old_entry_link = row.old_entry_link
+
+        feed_processed = parse(tg_feed_link)
+
+        new_entry_links = []
+        new_entry_titles = []
+
+        # this loop checks for every entry from the RSS Feed link from the DB row
+        for entry in feed_processed.entries:
+            # check if there are any new updates to the RSS Feed from the old entry
+            if entry.link != tg_old_entry_link:
+                new_entry_links.append(entry.link)
+                new_entry_titles.append(entry.title)
+            else:
+                break
+
+        # check if there's any new entries queued from the last check
+        if new_entry_links:
+            sql.update_url(row_id, new_entry_links)
+        else:
+            pass
 
 @run_async
 def wiki(update: Update, context: CallbackContext):
@@ -421,6 +860,7 @@ def totranslate(update: Update, context: CallbackContext):
         return
 
 @run_async
+@typing_action
 def info(update: Update, context: CallbackContext):
     bot, args = context.bot, context.args
     message = update.effective_message
@@ -536,18 +976,39 @@ __help__ = """
  • `/paste`*:* Do a paste at `neko.bin`
  • `/wiki <query>`*:* wiki your query.
  • `/markdownhelp`*:* quick summary of how markdown works in telegram - can only be called in private chats.
- • `/cash`*:* currency converter
+ • `/time <query>`*:* Gives information about a timezone.
+ *Available queries:* Country Code/Country Name/Timezone Name
+ • `/lyrics <song>`*:* returns the lyrics of that song. you can either enter just the song name or both the artist and song name.
+ • `/tr` or `/tl` (language code) as reply to a long message.
+*Example:* `/tr en`*:* translates something to english. 
+`/tr hi-en`*:* translates hindi to english.
+ \n*RSS Feed*\n
+ • `/addrss <link>`*:* add an RSS link to the subscriptions.
+ • `/removerss <link>`*:* removes the RSS link from the subscriptions.
+ • `/rss <link>`*:* shows the link's data and the last entry, for testing purposes.
+ • `/listrss`*:* shows the list of rss feeds that the chat is currently subscribed to.
 
- *Example syntax:*
- `/cash 1 USD INR`  _OR_   `/cash 1 usd inr`
-
- *Output:* `1.0 USD = 75.505 INR`
+*NOTE:* In groups, only admins can add/remove RSS links to the group's subscription
 
 """
+job = updater.job_queue
+
+job_rss_set = job.run_once(rss_set, 5)
+job_rss_update = job.run_repeating(rss_update, interval=60, first=60)
+job_rss_set.enabled = True
+job_rss_update.enabled = True
+
+SHOW_URL_HANDLER = CommandHandler("rss", show_url)
+ADD_URL_HANDLER = CommandHandler("addrss", add_url)
+REMOVE_URL_HANDLER = CommandHandler("removerss", remove_url)
+LIST_URLS_HANDLER = CommandHandler("listrss", list_urls)
 ID_HANDLER = DisableAbleCommandHandler("id", get_id)
 GIFID_HANDLER = DisableAbleCommandHandler("gifid", gifid)
 INFO_HANDLER = DisableAbleCommandHandler(["info"], info)
 UD_HANDLER = DisableAbleCommandHandler(["ud"], ud)
+LYRICS_HANDLER = DisableAbleCommandHandler("lyrics", lyrics, pass_args=True)
+TIME_HANDLER = DisableAbleCommandHandler("time", gettime)
+TRANSLATE_HANDLER = DisableAbleCommandHandler(["tr", "tl"], totranslate)
 PASTE_HANDLER = DisableAbleCommandHandler("paste", paste)
 ECHO_HANDLER = DisableAbleCommandHandler("echo", echo, filters=Filters.group)
 WEEBIFY_HANDLER = DisableAbleCommandHandler("weebify", weebify)
@@ -555,7 +1016,6 @@ MD_HELP_HANDLER = CommandHandler(
     "markdownhelp", markdown_help, filters=Filters.private)
 PAT_HANDLER = DisableAbleCommandHandler("pat", pat)
 WIKI_HANDLER = DisableAbleCommandHandler("wiki", wiki)
-CONVERTER_HANDLER = CommandHandler('cash', convert)
 SNIPE_HANDLER = CommandHandler(
     "snipe",
     snipe,
@@ -568,6 +1028,7 @@ STATS_HANDLER = CommandHandler(
 
 
 dispatcher.add_handler(SNIPE_HANDLER)
+dispatcher.add_handler(TRANSLATE_HANDLER)
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(GIFID_HANDLER)
 dispatcher.add_handler(WEEBIFY_HANDLER)
@@ -576,17 +1037,22 @@ dispatcher.add_handler(ECHO_HANDLER)
 dispatcher.add_handler(PAT_HANDLER)
 dispatcher.add_handler(UD_HANDLER)
 dispatcher.add_handler(STATS_HANDLER)
+dispatcher.add_handler(TIME_HANDLER)
 dispatcher.add_handler(MD_HELP_HANDLER)
 dispatcher.add_handler(WIKI_HANDLER)
-dispatcher.add_handler(CONVERTER_HANDLER)
 dispatcher.add_handler(PASTE_HANDLER)
+dispatcher.add_handler(LYRICS_HANDLER)
+dispatcher.add_handler(SHOW_URL_HANDLER)
+dispatcher.add_handler(ADD_URL_HANDLER)
+dispatcher.add_handler(REMOVE_URL_HANDLER)
+dispatcher.add_handler(LIST_URLS_HANDLER)
 
 __mod_name__ = "Misc"
 __command_list__ = ["id", "info", "echo", "pat", "snipe", "weebify", "ud", 
 "runs", "slap", "roll", "toss", "shrug", "bluetext", "rlg", "decide",
-    "table", "react", "wiki","tr", "cash", "paste"]
+    "table", "react", "wiki","tr", "paste", "time","tr", "tl", "lyrics"]
 __handlers__ = [
     ID_HANDLER, GIFID_HANDLER, INFO_HANDLER, ECHO_HANDLER, MD_HELP_HANDLER,
     SNIPE_HANDLER, PAT_HANDLER, STATS_HANDLER, WEEBIFY_HANDLER, UD_HANDLER,
-    WIKI_HANDLER, CONVERTER_HANDLER, PASTE_HANDLER
+    WIKI_HANDLER, PASTE_HANDLER, TIME_HANDLER, TRANSLATE_HANDLER, LYRICS_HANDLER
 ]

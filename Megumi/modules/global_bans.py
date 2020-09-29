@@ -352,11 +352,10 @@ def check_and_ban(update, user_id, should_message=True):
                    f"<code>*bans them from here*</code>.\n" \
                    f"<b>Appeal chat</b>: {SUPPORT_CHAT}\n" \
                    f"<b>User ID</b>: <code>{user_id}</code>"
-        user = sql.get_gbanned_user(user_id)
-        if user.reason:
-            text += "\nReason: <code>{}</code>".format(html.escape(user.reason))
-            update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
-
+            user = sql.get_gbanned_user(user_id)
+            if user.reason:
+                text += "\nReason: <code>{}</code>".format(html.escape(user.reason))
+                update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 @run_async
 def enforce_gban(update: Update, context:CallbackContext):
@@ -456,11 +455,16 @@ def __user_info__(user_id):
     is_gbanned = sql.is_user_gbanned(user_id)
 
     text = "Globally banned: <b>{}</b>"
+    if user_id == dispatcher.bot.id:
+        return ""
+    if int(user_id) in SUDO_USERS + TIGER_USERS + WHITELIST_USERS:
+        return ""
     if is_gbanned:
         text = text.format("Yes")
         user = sql.get_gbanned_user(user_id)
         if user.reason:
-            text += "\nReason: <code>{}</code>".format(html.escape(user.reason))
+            text += f"\n<b>Reason:</b> <code>{html.escape(user.reason)}</code>"
+        text += f"\n<b>Appeal Chat:</b> {SUPPORT_CHAT}"
     else:
         text = text.format("No")
     return text

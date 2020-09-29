@@ -1,7 +1,7 @@
 # Module to blacklist users and prevent them from using commands by @TheRealPhoenix
 
 import Megumi.modules.sql.blacklistusers_sql as sql
-from Megumi import (DEV_USERS, OWNER_ID, SUDO_USERS, SUPPORT_USERS,
+from Megumi import (DEV_USERS, OWNER_ID, SUDO_USERS, SUPPORT_USERS, TIGER_USERS,
                           WHITELIST_USERS, dispatcher)
 from Megumi.modules.helper_funcs.chat_status import dev_plus
 from Megumi.modules.helper_funcs.extraction import (extract_user,
@@ -37,7 +37,7 @@ def bl_user(update: Update, context: CallbackContext) -> str:
         return ""
 
     if user_id in BLACKLISTWHITELIST:
-        message.reply_text("No!\nNoticing Disasters is my job.")
+        message.reply_text("No! This user is my bish i cant ignore them.")
         return ""
 
     try:
@@ -132,7 +132,10 @@ def __user_info__(user_id):
     is_blacklisted = sql.is_user_blacklisted(user_id)
 
     text = "Blacklisted: <b>{}</b>"
-
+    if user_id == dispatcher.bot.id:
+        return ""
+    if int(user_id) in SUDO_USERS + TIGER_USERS + WHITELIST_USERS:
+        return ""
     if is_blacklisted:
         text = text.format("Yes")
         reason = sql.get_reason(user_id)

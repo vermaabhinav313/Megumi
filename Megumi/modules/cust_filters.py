@@ -16,7 +16,7 @@ from Megumi.modules.sql import cust_filters_sql as sql
 from telegram import InlineKeyboardMarkup, ParseMode, Update
 from telegram.error import BadRequest
 from telegram.ext import (CallbackContext, CommandHandler,
-                          DispatcherHandlerStop, MessageHandler, run_async)
+                          DispatcherHandlerStop, MessageHandler,Filters, run_async)
 
 HANDLER_GROUP = 10
 
@@ -169,6 +169,32 @@ def stop_filter(update: Update, context: CallbackContext):
     msg.reply_text(
         "That's not a current filter - run /filters for all active filters.")
 
+@run_async
+@user_admin
+def removeall_filters(update, context):
+    chat = update.effective_chat
+    user = update.effective_user
+    msg = update.effective_message
+
+    usermem = chat.get_member(user.id)
+    if not usermem.status == "creator":
+        msg.reply_text("This command can be only used by chat creator.")
+        return
+
+    allfilters = sql.get_chat_triggers(chat.id)
+
+    if not allfilters:
+        msg.reply_text("No filters in this chat, nothing to stop!")
+        return
+
+    count = 0
+    filterlist = []
+    for x in allfilters:
+        count += 1
+        filterlist.append(x)
+
+    for i in filterlist:
+        sql.remove_filter(chat.id, i)
 
 @run_async
 def reply_filter(update: Update, context: CallbackContext):
@@ -260,29 +286,27 @@ __help__ = """
 
 *Admins only:*
  • `/filter <keyword> <reply message>`*:* adds a filter to this chat. The bot will now reply that message whenever 'keyword'\
-is mentioned. If you reply to a sticker with a keyword, the bot will reply with that sticker. \
+ is mentioned. If you reply to a sticker with a keyword, the bot will reply with that sticker. \
 If you want your keyword to be a sentence, use quotes. 
 *Example:* `/filter "hey there" How you doin?`
  • `/stop <filter keyword>`*:* stop that filter.
-Note: Filters now have regex so any existing filters you have are case insensitive by default.\
-To save case insensitive regex use\
-`/filter "(?i) my trigger word" my reply that ignores case`\
-In case you require more advanced regex help, please reach out to us at @OnePunchSupport. 
+ • `/removeallfilters`*:* Remove all chat filters at once.`(chat creator only)`
 """
 
 FILTER_HANDLER = CommandHandler("filter", filters)
 STOP_HANDLER = CommandHandler("stop", stop_filter)
-LIST_HANDLER = DisableAbleCommandHandler(
-    "filters", list_handlers, admin_ok=True)
+LIST_HANDLER = DisableAbleCommandHandler("filters", list_handlers, admin_ok=True)
+REMOVEALLFILTER_HANDLER = CommandHandler("removeallfilters", removeall_filters, filters=Filters.group)
 CUST_FILTER_HANDLER = MessageHandler(CustomFilters.has_text, reply_filter)
 
 dispatcher.add_handler(FILTER_HANDLER)
 dispatcher.add_handler(STOP_HANDLER)
 dispatcher.add_handler(LIST_HANDLER)
+dispatcher.add_handler(REMOVEALLFILTER_HANDLER)
 dispatcher.add_handler(CUST_FILTER_HANDLER, HANDLER_GROUP)
 
 __mod_name__ = "Filters"
 __handlers__ = [
     FILTER_HANDLER, STOP_HANDLER, LIST_HANDLER,
-    (CUST_FILTER_HANDLER, HANDLER_GROUP)
+    (CUST_FILTER_HANDLER, HANDLER_GROUP,REMOVEALLFILTER_HANDLER)
 ]

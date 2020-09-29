@@ -1,6 +1,5 @@
 import random
 import html
-import time
 
 from Megumi import dispatcher
 from Megumi.modules.disable import (DisableAbleCommandHandler)
@@ -12,23 +11,9 @@ from telegram.ext import CallbackContext, Filters, MessageHandler, run_async
 
 AFK_GROUP = 7
 AFK_REPLY_GROUP = 8
-TIME = 0.0
-
-def time_formatter(seconds: float) -> str:
-    """ humanize time """
-    minutes, seconds = divmod(int(seconds), 60)
-    hours, minutes = divmod(minutes, 60)
-    days, hours = divmod(hours, 24)
-    tmp = ((str(days) + "d, ") if days else "") + \
-        ((str(hours) + "h, ") if hours else "") + \
-        ((str(minutes) + "m, ") if minutes else "") + \
-        ((str(seconds) + "s, ") if seconds else "")
-    return tmp[:-2]
 
 @run_async
 def afk(update: Update, context: CallbackContext):
-    global TIME
-    TIME = time.time()
     args = update.effective_message.text.split(None, 1)
     notice = ""
     if len(args) >= 2:
@@ -122,18 +107,17 @@ def reply_afk(update: Update, context: CallbackContext):
 
 
 def check_afk(update, context, user_id, fst_name, userc_id):
-    afk_time = time_formatter(round(time.time() - TIME))
     if sql.is_afk(user_id):
         user = sql.check_afk_status(user_id)
         if not user.reason:
             if int(userc_id) == int(user_id):
                 return
-            res = "{} is afk \nLast Seen: {} ago".format(fst_name, afk_time)
+            res = "{} is afk".format(fst_name)
             update.effective_message.reply_text(res)
         else:
             if int(userc_id) == int(user_id):
                 return
-            res = "{} is afk.\nLast Seen: {} ago \nReason: {}".format(fst_name, afk_time, user.reason)
+            res = "{} is afk.\nReason: {}".format(fst_name, user.reason)
             update.effective_message.reply_text(res)
 
 def __user_info__(user_id):

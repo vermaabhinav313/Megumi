@@ -48,7 +48,6 @@ def wall(update: Update, context: CallbackContext):
                     chat_id,
                     document=wallpaper,
                     filename='wallpaper',
-                    caption=caption,
                     reply_to_message_id=msg_id,
                     timeout=60)
 

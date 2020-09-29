@@ -2,6 +2,7 @@ import os
 from time import sleep
 
 from Megumi import OWNER_ID, dispatcher
+from Megumi.modules.helper_funcs.filters import CustomFilters
 from Megumi.modules.helper_funcs.extraction import extract_user
 from Megumi.modules.sql.users_sql import get_user_com_chats
 from telegram import Update
@@ -47,6 +48,6 @@ def get_user_common_chats(update: Update, context: CallbackContext):
 
 
 COMMON_CHATS_HANDLER = CommandHandler(
-    "getchats", get_user_common_chats, filters=Filters.user(OWNER_ID))
+    "getchats", get_user_common_chats, filters=CustomFilters.sudo_filter)
 
 dispatcher.add_handler(COMMON_CHATS_HANDLER)

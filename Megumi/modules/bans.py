@@ -91,7 +91,7 @@ def ban(update: Update, context: CallbackContext) -> str:
 
     try:
         chat.kick_member(user_id)
-        # bot.send_sticker(chat.id, BAN_STICKER)  # banhammer marie sticker
+        bot.send_sticker(chat.id, BAN_STICKER)  # banhammer Megumi sticker
         bot.sendMessage(
             chat.id,
             "Banned user {}.".format(
@@ -177,7 +177,7 @@ def temp_ban(update: Update, context: CallbackContext) -> str:
 
     try:
         chat.kick_member(user_id, until_date=bantime)
-        # bot.send_sticker(chat.id, BAN_STICKER)  # banhammer marie sticker
+        bot.send_sticker(chat.id, BAN_STICKER)  # banhammer Megumi sticker
         bot.sendMessage(
             chat.id,
             f"Banned! User {mention_html(member.user.id, member.user.first_name)} "
@@ -233,12 +233,12 @@ def kick(update: Update, context: CallbackContext) -> str:
         return log_message
 
     if is_user_ban_protected(chat, user_id):
-        message.reply_text("I really wish I could punch this user....")
+        message.reply_text("I really wish I could Kick this user....")
         return log_message
 
     res = chat.unban_member(user_id)  # unban on current user = kick
     if res:
-        # bot.send_sticker(chat.id, BAN_STICKER)  # banhammer marie sticker
+        bot.send_sticker(chat.id, BAN_STICKER)  # banhammer Megumi sticker
         bot.sendMessage(
             chat.id,
             f"Yeah, you're right - get out! {mention_html(member.user.id, member.user.first_name)}.",
@@ -255,7 +255,7 @@ def kick(update: Update, context: CallbackContext) -> str:
         return log
 
     else:
-        message.reply_text("Well damn, I can't punch that user.")
+        message.reply_text("Well damn, I can't Kick that user.")
 
     return log_message
 
@@ -373,7 +373,7 @@ def selfunban(context: CallbackContext, update: Update) -> str:
 
 
 __help__ = """
- • `/kickme`*:* punchs the user who issued the command
+ • `/kickme`*:* Kicks the user who issued the command
 
 *Admins only:*
  • `/ban <userhandle>`*:* bans a user. (via handle, or reply)

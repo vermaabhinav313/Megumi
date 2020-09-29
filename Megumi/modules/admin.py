@@ -349,7 +349,7 @@ def adminlist(update: Update, context: CallbackContext):
     for admin in administrators:
         user = admin.user
         name = f"[{user.first_name + (user.last_name or '')}](tg://user?id={user.id})"
-        text += f"\n - {name}"
+        text += f"\n • {name}"
 
     update.effective_message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
 
