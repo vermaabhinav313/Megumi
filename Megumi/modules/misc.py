@@ -1,9 +1,12 @@
 import html
 import re
-import datetime
+from datetime import datetime
 from typing import List
 import wikipedia
 import random
+from telegram import ChatAction
+from gtts import gTTS
+import time
 from tswift import Song
 from telegram import ChatAction
 from feedparser import parse
@@ -11,7 +14,7 @@ import json
 import urllib.request
 import urllib.parse
 import requests
-from Megumi import (DEV_USERS, OWNER_ID, SUDO_USERS, SUPPORT_USERS,
+from Megumi import (DEV_USERS, OWNER_ID, SUDO_USERS,MESSAGE_DUMP, SUPPORT_USERS,
                           TIGER_USERS, WHITELIST_USERS, TIME_API_KEY, dispatcher, updater)
 from Megumi.__main__ import STATS, TOKEN, USER_INFO
 from Megumi.modules.disable import DisableAbleCommandHandler
@@ -60,6 +63,45 @@ weebyfont = [
     '卂', '乃', '匚', '刀', '乇', '下', '厶', '卄', '工', '丁', '长', '乚', '从', '𠘨', '口',
     '尸', '㔿', '尺', '丂', '丅', '凵', 'リ', '山', '乂', '丫', '乙'
 ]
+
+@run_async
+def feedback(update: Update, context:CallbackContext):
+  bot = context.bot
+  name = update.effective_message.from_user.first_name
+  message = update.effective_message
+  userid=message.from_user.id
+  text = message.text[len('/feedback '):]
+   
+
+  feed_text = f"Megumi's *New* feedback from [{name}](tg://user?id={userid})\n\nfeed: {text}"
+  
+
+  bot.send_message(MESSAGE_DUMP, feed_text, parse_mode=ParseMode.MARKDOWN)
+ 
+  text = html.escape(text)
+  reply_text=f"Thankyou for giving us your feedback."
+  message.reply_text(reply_text) 
+
+@run_async
+def tts(update: Update, context: CallbackContext):
+    args = context.args
+    current_time = datetime.strftime(datetime.now(), "%d.%m.%Y %H:%M:%S")
+    filename = datetime.now().strftime("%d%m%y-%H%M%S%f")
+    reply = " ".join(args)
+    update.message.chat.send_action(ChatAction.RECORD_AUDIO)
+    lang="ml"
+    tts = gTTS(reply, lang)
+    tts.save("k.mp3")
+    with open("k.mp3", "rb") as f:
+        linelist = list(f)
+        linecount = len(linelist)
+    if linecount == 1:
+        update.message.chat.send_action(ChatAction.RECORD_AUDIO)
+        lang = "en"
+        tts = gTTS(reply, lang)
+        tts.save("k.mp3")
+    with open("k.mp3", "rb") as speech:
+        update.message.reply_voice(speech, quote=False)
 
 @run_async
 def paste(update: Update, context: CallbackContext):
@@ -199,8 +241,7 @@ def totranslate(update: Update, context: CallbackContext):
         update.effective_message.reply_text(
             "Reply to messages or write messages from other languages ​​for translating into the intended language\n\n"
             "Example: `/tr en-ml` to translate from English to Malayalam\n"
-            "Or use: `/tr ml` for automatic detection and translating it into Malayalam.\n"
-            "See [List of Language Codes](t.me/OnePunchSupport/12823) for a list of language codes.",
+            "Or use: `/tr ml` for automatic detection and translating it into Malayalam.\n",
             parse_mode="markdown",
             disable_web_page_preview=True)
     except ValueError:
@@ -849,8 +890,7 @@ def totranslate(update: Update, context: CallbackContext):
         update.effective_message.reply_text(
             "Reply to messages or write messages from other languages ​​for translating into the intended language\n\n"
             "Example: `/tr en-ml` to translate from English to Malayalam\n"
-            "Or use: `/tr ml` for automatic detection and translating it into Malayalam.\n"
-            "See [List of Language Codes](t.me/OnePunchSupport/12823) for a list of language codes.",
+            "Or use: `/tr ml` for automatic detection and translating it into Malayalam.\n",
             parse_mode="markdown",
             disable_web_page_preview=True)
     except ValueError:
@@ -973,8 +1013,10 @@ __help__ = """
  • `/weebify <text>`*:* returns a weebified text.
  • `/ud <word>`*:* Type the word or expression you want to search use.
  • `/info`*:* get information about a user.
+ • `/feedback`*:* You can give us your feedbacks 
  • `/paste`*:* Do a paste at `neko.bin`
  • `/wiki <query>`*:* wiki your query.
+ • `/tts <your text>`*:* turns text to speech
  • `/markdownhelp`*:* quick summary of how markdown works in telegram - can only be called in private chats.
  • `/time <query>`*:* Gives information about a timezone.
  *Available queries:* Country Code/Country Name/Timezone Name
@@ -1003,6 +1045,7 @@ ADD_URL_HANDLER = CommandHandler("addrss", add_url)
 REMOVE_URL_HANDLER = CommandHandler("removerss", remove_url)
 LIST_URLS_HANDLER = CommandHandler("listrss", list_urls)
 ID_HANDLER = DisableAbleCommandHandler("id", get_id)
+TTS_HANDLER = DisableAbleCommandHandler("tts", tts, pass_args=True)
 GIFID_HANDLER = DisableAbleCommandHandler("gifid", gifid)
 INFO_HANDLER = DisableAbleCommandHandler(["info"], info)
 UD_HANDLER = DisableAbleCommandHandler(["ud"], ud)
@@ -1010,12 +1053,14 @@ LYRICS_HANDLER = DisableAbleCommandHandler("lyrics", lyrics, pass_args=True)
 TIME_HANDLER = DisableAbleCommandHandler("time", gettime)
 TRANSLATE_HANDLER = DisableAbleCommandHandler(["tr", "tl"], totranslate)
 PASTE_HANDLER = DisableAbleCommandHandler("paste", paste)
+
 ECHO_HANDLER = DisableAbleCommandHandler("echo", echo, filters=Filters.group)
 WEEBIFY_HANDLER = DisableAbleCommandHandler("weebify", weebify)
 MD_HELP_HANDLER = CommandHandler(
     "markdownhelp", markdown_help, filters=Filters.private)
 PAT_HANDLER = DisableAbleCommandHandler("pat", pat)
 WIKI_HANDLER = DisableAbleCommandHandler("wiki", wiki)
+FEED_HANDLER = DisableAbleCommandHandler("feedback", feedback)
 SNIPE_HANDLER = CommandHandler(
     "snipe",
     snipe,
@@ -1028,6 +1073,7 @@ STATS_HANDLER = CommandHandler(
 
 
 dispatcher.add_handler(SNIPE_HANDLER)
+dispatcher.add_handler(FEED_HANDLER)
 dispatcher.add_handler(TRANSLATE_HANDLER)
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(GIFID_HANDLER)
@@ -1035,6 +1081,7 @@ dispatcher.add_handler(WEEBIFY_HANDLER)
 dispatcher.add_handler(INFO_HANDLER)
 dispatcher.add_handler(ECHO_HANDLER)
 dispatcher.add_handler(PAT_HANDLER)
+dispatcher.add_handler(TTS_HANDLER)
 dispatcher.add_handler(UD_HANDLER)
 dispatcher.add_handler(STATS_HANDLER)
 dispatcher.add_handler(TIME_HANDLER)
@@ -1050,9 +1097,10 @@ dispatcher.add_handler(LIST_URLS_HANDLER)
 __mod_name__ = "Misc"
 __command_list__ = ["id", "info", "echo", "pat", "snipe", "weebify", "ud", 
 "runs", "slap", "roll", "toss", "shrug", "bluetext", "rlg", "decide",
-    "table", "react", "wiki","tr", "paste", "time","tr", "tl", "lyrics"]
+    "table", "react", "wiki","tr", "paste", "time","tr", "tl", "lyrics", "tts", "feedback"]
 __handlers__ = [
     ID_HANDLER, GIFID_HANDLER, INFO_HANDLER, ECHO_HANDLER, MD_HELP_HANDLER,
     SNIPE_HANDLER, PAT_HANDLER, STATS_HANDLER, WEEBIFY_HANDLER, UD_HANDLER,
-    WIKI_HANDLER, PASTE_HANDLER, TIME_HANDLER, TRANSLATE_HANDLER, LYRICS_HANDLER
+    WIKI_HANDLER, PASTE_HANDLER, TIME_HANDLER, TRANSLATE_HANDLER, LYRICS_HANDLER, TTS_HANDLER,
+    FEED_HANDLER
 ]

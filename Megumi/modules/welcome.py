@@ -86,7 +86,7 @@ def send(update, message, keyboard, backup_message):
     return msg
 
 @run_async
-def new_member(update: Update, context:CallbackContext):
+def new_member(update: Update, context: CallbackContext):
     bot = context.bot
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
@@ -133,10 +133,14 @@ def new_member(update: Update, context:CallbackContext):
             if new_mem.id == OWNER_ID:
                 update.effective_message.reply_text("Master is in the houseeee, let's get this party started!")
                 continue
+            # Give the sudos/support a special welcome too
+            elif new_mem.id in SUDO_USERS or new_mem.id in SUPPORT_USERS:
+                update.effective_message.reply_text("{first} has joined your chat")
+                continue
             # Make bot greet admins
             elif new_mem.id == bot.id:
-                update.effective_message.reply_text("Hey {}, I'm {}! Thank you for adding me to {}" 
-                " and be sure to check /help in PM for more commands and tricks!".format(user.first_name, bot.first_name, chat_name))
+                update.effective_message.reply_text("Hey {}, I'm {}! Thank you for adding\
+                 me.".format(user.first_name, bot.first_name))
 
             else:
                 # If welcome message is media, send with appropriate function
@@ -191,7 +195,7 @@ def new_member(update: Update, context:CallbackContext):
                                              can_send_other_messages=False, 
                                              can_add_web_page_previews=False)
                         
-            delete_join(bot, update)
+            delete_join(update, context)
 
         prev_welc = sql.get_clean_pref(chat.id)
         if prev_welc:
@@ -217,7 +221,7 @@ def left_member(update: Update, context:CallbackContext):
 
             # Give the owner a special goodbye
             if left_mem.id == OWNER_ID:
-                update.effective_message.reply_text("RIP Master")
+                update.effective_message.reply_text("Bye Master")
                 return
 
             # if media goodbye, use appropriate function for it
@@ -495,7 +499,7 @@ def clean_welcome(update: Update, context:CallbackContext) -> str:
 @user_admin
 @loggable
 def del_joined(update: Update, context:CallbackContext) -> str:
-    bot, args = context.bot, comtext.args
+    bot, args = context.bot, context.args
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
 
@@ -530,9 +534,9 @@ def del_joined(update: Update, context:CallbackContext) -> str:
 
 @run_async
 def delete_join(update: Update, context:CallbackContext):
+    bot = context.bot
     chat = update.effective_chat  # type: Optional[Chat]
     join = update.effective_message.new_chat_members
-    bot = context.bot
     if can_delete(chat, bot.id):
         del_join = sql.get_del_pref(chat.id)
         if del_join and update.message:
@@ -729,7 +733,7 @@ WELC_HELP_TXT = (
     "Buttons are also supported, so you can make your welcomes look awesome with some nice intro "
     "buttons.\n"
     f"To create a button linking to your rules, use this: `[Rules](buttonurl://t.me/{dispatcher.bot.username}?start=group_id)`. "
-    "Simply replace `group_id` with your group's id, which can be obtained via /id, and you're good to "
+    "Simply replace `group_id` with your group's id, which can be obtained via `/id`, and you're good to "
     "go. Note that group ids are usually preceded by a `-` sign; this is required, so please don't "
     "remove it.\n"
     "You can even set images/gifs/videos/voice messages as the welcome message by "
@@ -852,23 +856,22 @@ __help__ = """
 {}
 Commands:
 *Admin only:*
- - /welcome <on/off>: enable/disable welcome messages.
- - /welcome: shows current welcome settings.
- - /welcome noformat: shows current welcome settings, without the formatting - useful to recycle your welcome messages!
- - /goodbye -> same usage and args as /welcome.
- - /setwelcome <sometext>: set a custom welcome message. If used replying to media, uses that media.
- - /setgoodbye <sometext>: set a custom goodbye message. If used replying to media, uses that media.
- - /resetwelcome: reset to the default welcome message.
- - /resetgoodbye: reset to the default goodbye message.
- - /cleanwelcome <on/off>: On new member, try to delete the previous welcome message to avoid spamming the chat.
- - /rmjoin <on/off>: when someone joins, try to delete the *user* joined the group message.
- - /safemode <on/off>: all users that join, get muted; a button gets added to the welcome message for them to unmute themselves. This proves they aren't a bot! This will also restrict users ability to post media for 24 hours.
- - /welcomehelp: view more formatting information for custom welcome/goodbye messages.
- - /setban <on/off/true/false>: Enables/disables autoban on CAS banned user detected.
- - /setdefense <on/off/true/false>: Turns on defense mode, will kick any new user automatically.
- - /getdefense: gets the current defense setting
- - /kicktime: gets the auto-kick time setting
- - /setkicktime: sets new auto-kick time value (between 30 and 900 seconds)
+ • `/welcome <on/off>`*:* enable/disable welcome messages.
+ • `/welcome`*:* shows current welcome settings.
+ • `/welcome noformat`*:* shows current welcome settings, without the formatting - useful to recycle your welcome messages!
+ • `/goodbye`*:* same usage and args as `/welcome`.
+ • `/setwelcome <sometext>`*:* set a custom welcome message. If used replying to media, uses that media.
+ • `/setgoodbye <sometext>`*:* set a custom goodbye message. If used replying to media, uses that media.
+ • `/resetwelcome`*:* reset to the default welcome message.
+ • `/resetgoodbye`*:* reset to the default goodbye message.
+ • `/cleanwelcome <on/off>`*:* On new member, try to delete the previous welcome message to avoid spamming the chat.
+ • `/rmjoin <on/off>`*:* when someone joins, try to delete the *user* joined the group message.
+ • `/safemode <on/off>`*:* all users that join, get muted; a button gets added to the welcome message for them to unmute themselves. This proves they aren't a bot! This will also restrict users ability to post media for 24 hours.
+ • `/welcomehelp`*:* view more formatting information for custom welcome/goodbye messages.
+ • `/setdefense <on/off/true/false>`*:* Turns on defense mode, will kick any new user automatically.
+ • `/getdefense`*:* gets the current defense setting
+ • `/kicktime`*:* gets the auto-kick time setting
+ • `/setkicktime`*:* sets new auto-kick time value (between 30 and 900 seconds)
 """.format(WELC_HELP_TXT)
 
 __mod_name__ = "Greetings"

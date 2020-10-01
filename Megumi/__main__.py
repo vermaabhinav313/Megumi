@@ -21,19 +21,12 @@ from telegram.ext.dispatcher import DispatcherHandlerStop, run_async
 from telegram.utils.helpers import escape_markdown
 
 PM_START_TEXT = """
-Hi *{}*, my name is *Megumi*!
-
-// I am an Anime themed group management bot with a lot of Special Features.
-
-// You can find my list of available commands with /help.
-
-==========================
--> [Megumi's Repo](https://github.com/Unknown746/Megumi)
--> Report [Blessing Support](https://t.me/BlessingSupport) if I go offline
-==========================
-
-// Wanna Add me to your Group? Just click the button below!
+Hi *{}*, my name is *Megumi Kato*!\n
+I am an Anime themed group management bot with a lot of Special Features.\n
+You can find my list of available commands with /help.
+\nWanna Add me to your Group? Just click the button below!
 """
+MEGUMI_IMG = "https://telegra.ph/file/aebaa70957ff54d9a816d.jpg"
 
 HELP_STRINGS = """
 Hey! My name is *Megumi*. I am a group management bot, here to help you get around and keep the order in your groups!
@@ -43,7 +36,6 @@ Hey! My name is *Megumi*. I am a group management bot, here to help you get arou
  • /start: start the bot
  • /help: PM's you this message.
  • /help <module name>: PM's you info about that module.
- • /donate: information about how to donate!
  • /settings:
    • in PM: will send you your settings for all supported modules.
    • in a group: will redirect you to pm, with all that chat's settings.
@@ -52,13 +44,6 @@ And the following:
 """.format(
     dispatcher.bot.first_name, ""
     if not ALLOW_EXCL else "\nAll commands can either be used with / or !.\n")
-
-MEGUMI_IMG = "https://telegra.ph/file/aebaa70957ff54d9a816d.jpg"
-
-DONATE_STRING = """Heya, glad to hear you want to donate!
-Megumi is hosted on one of Tiger's Servers and doesn't require any donations as of now but \
-You can donate to the original writer of the Base code, Paul
-There are two ways of supporting him; [PayPal](paypal.me/PaulSonOfLars), or [Monzo](monzo.me/paulnionvestergaardlarsen)."""
 
 IMPORTED = {}
 MIGRATEABLE = []
@@ -127,6 +112,45 @@ def test(update: Update, context: CallbackContext):
     update.effective_message.reply_text("This person edited a message")
     print(update.effective_message)
 
+@run_async
+def megumi_about_callback(update: Update, context: CallbackContext):
+    query = update.callback_query
+    if query.data == "aboutmanu_":
+        query.message.edit_text(
+            text="*Megumi is a bot for managing your group with additional features*,"
+                 "\n\nMegumi's licensed under the GNU General Public License v3.0,"
+                 "\nhere is the [repository](https://github.com/Unknown746/Megumi)."
+                 "\n\nIf you have any question about Megumi, let us know at @BlessingSupport.",
+                parse_mode=ParseMode.MARKDOWN,
+                disable_web_page_preview=True,
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton(
+                        text="Back", callback_data="aboutmanu_back")
+                ]]))
+    elif query.data == "aboutmanu_back":
+        first_name = update.effective_user.first_name
+        buttons = [[
+                InlineKeyboardButton(
+                    text="👥 Add Megumi to your group", url="https://t.me/MegumiRobot?startgroup=new"
+                ),
+            ]]            
+        buttons += [[
+                InlineKeyboardButton(
+                    text="❓ Help", callback_data="help_back"
+                ),
+                InlineKeyboardButton(
+                    text="⚙️ Source Code", callback_data="aboutmanu_"
+                ),
+            ]]
+        update.effective_message.edit_text(
+            PM_START_TEXT.format(
+                escape_markdown(first_name),
+                escape_markdown(context.bot.first_name)),
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            )
+        context.bot.answer_callback_query(query.id)
 
 @run_async
 def start(update: Update, context: CallbackContext):
@@ -153,19 +177,29 @@ def start(update: Update, context: CallbackContext):
 
         else:
             first_name = update.effective_user.first_name
-            update.effective_message.reply_photo(
-                MEGUMI_IMG,
+            buttons = [[
+                InlineKeyboardButton(
+                    text="👥 Add Megumi to your group", url="https://t.me/MegumiRobot?startgroup=new"
+                ),
+            ]]            
+            buttons += [[
+                InlineKeyboardButton(
+                    text="❓ Help", callback_data="help_back"
+                ),
+                InlineKeyboardButton(
+                    text="⚙️ Source Code", callback_data="aboutmanu_"
+                ),
+            ]]
+            update.effective_message.reply_text(
                 PM_START_TEXT.format(
                     escape_markdown(first_name),
-                    escape_markdown(context.bot.first_name), SUPPORT_CHAT),
+                    escape_markdown(context.bot.first_name)),
                 parse_mode=ParseMode.MARKDOWN,
+                reply_markup=InlineKeyboardMarkup(buttons),
                 disable_web_page_preview=True,
-                reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton(text="👥 Add Megumi to your group", url="https://t.me/MegumiRobot?startgroup=new")],
-                 [InlineKeyboardButton(text="❓ Help", callback_data="help_back"),InlineKeyboardButton(text="🙋 Support Group", url="https://t.me/BlessingSupport")
-                ]]))
+                )
     else:
-        update.effective_message.reply_text("Hey there! I'm alive.")
+        update.effective_message.reply_text("Hey there! I'm alive :) PM me if you have any questions on how to use me!")
 
 
 # for test purposes
@@ -205,12 +239,13 @@ def help_button(update: Update, context: CallbackContext):
     prev_match = re.match(r"help_prev\((.+?)\)", query.data)
     next_match = re.match(r"help_next\((.+?)\)", query.data)
     back_match = re.match(r"help_back", query.data)
+    print(query.message.chat.id)
     try:
         if mod_match:
             module = mod_match.group(1)
             text = "Here is the help for the *{}* module:\n".format(HELPABLE[module].__mod_name__) \
                    + HELPABLE[module].__help__
-            query.message.reply_text(
+            query.message.edit_text(
                 text=text,
                 parse_mode=ParseMode.MARKDOWN,
                 disable_web_page_preview=True,
@@ -221,7 +256,7 @@ def help_button(update: Update, context: CallbackContext):
 
         elif prev_match:
             curr_page = int(prev_match.group(1))
-            query.message.reply_text(
+            query.message.edit_text(
                 HELP_STRINGS,
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(
@@ -229,14 +264,14 @@ def help_button(update: Update, context: CallbackContext):
 
         elif next_match:
             next_page = int(next_match.group(1))
-            query.message.reply_text(
+            query.message.edit_text(
                 HELP_STRINGS,
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(
                     paginate_modules(next_page + 1, HELPABLE, "help")))
 
         elif back_match:
-            query.message.reply_text(
+            query.message.edit_text(
                 text=HELP_STRINGS,
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(
@@ -244,17 +279,8 @@ def help_button(update: Update, context: CallbackContext):
 
         # ensure no spinny white circle
         context.bot.answer_callback_query(query.id)
-        query.message.delete()
     except BadRequest as excp:
-        if excp.message == "Message is not modified":
             pass
-        elif excp.message == "Query_id_invalid":
-            pass
-        elif excp.message == "Message can't be deleted":
-            pass
-        else:
-            LOGGER.exception("Exception in help buttons. %s", str(query.data))
-
 
 @run_async
 def get_help(update: Update, context: CallbackContext):
@@ -419,38 +445,6 @@ def get_settings(update: Update, context: CallbackContext):
         send_settings(chat.id, user.id, True)
 
 
-@run_async
-def donate(update: Update, context: CallbackContext):
-    user = update.effective_message.from_user
-    chat = update.effective_chat  # type: Optional[Chat]
-    bot = context.bot
-    if chat.type == "private":
-        update.effective_message.reply_text(
-            DONATE_STRING,
-            parse_mode=ParseMode.MARKDOWN,
-            disable_web_page_preview=True)
-
-        if OWNER_ID != 254318997 and DONATION_LINK:
-            update.effective_message.reply_text(
-                "You can also donate to the person currently running me "
-                "[here]({})".format(DONATION_LINK),
-                parse_mode=ParseMode.MARKDOWN)
-
-    else:
-        try:
-            bot.send_message(
-                user.id,
-                DONATE_STRING,
-                parse_mode=ParseMode.MARKDOWN,
-                disable_web_page_preview=True)
-
-            update.effective_message.reply_text(
-                "I've PM'ed you about donating to my creator!")
-        except Unauthorized:
-            update.effective_message.reply_text(
-                "Contact me in PM first to get donation information.")
-
-
 def migrate_chats(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
     if msg.migrate_to_chat_id:
@@ -474,6 +468,10 @@ def main():
     test_handler = CommandHandler("test", test)
     start_handler = CommandHandler("start", start)
 
+    ma_callback_handler = CallbackQueryHandler(
+        megumi_about_callback, pattern=r"aboutmanu_"
+    ) 
+    
     help_handler = CommandHandler("help", get_help)
     help_callback_handler = CallbackQueryHandler(help_button, pattern=r"help_")
 
@@ -481,18 +479,17 @@ def main():
     settings_callback_handler = CallbackQueryHandler(
         settings_button, pattern=r"stngs_")
 
-    donate_handler = CommandHandler("donate", donate)
     migrate_handler = MessageHandler(Filters.status_update.migrate,
                                      migrate_chats)
 
     # dispatcher.add_handler(test_handler)
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(help_handler)
+    dispatcher.add_handler(ma_callback_handler)
     dispatcher.add_handler(settings_handler)
     dispatcher.add_handler(help_callback_handler)
     dispatcher.add_handler(settings_callback_handler)
     dispatcher.add_handler(migrate_handler)
-    dispatcher.add_handler(donate_handler)
 
     dispatcher.add_error_handler(error_callback)
 

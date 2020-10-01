@@ -112,6 +112,12 @@ def set_about_bio(update: Update, context: CallbackContext):
             )
             return
 
+        if user_id == DEV_USERS or SUDO_USERS and sender_id not in SUDO_USERS and sender_id not in DEV_USERS:
+            message.reply_text(
+                "Erm... yeah, I only trust sudo users or developers to set my master bio."
+            )
+            return
+
         text = message.text
         bio = text.split(
             None, 1

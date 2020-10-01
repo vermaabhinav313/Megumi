@@ -16,6 +16,11 @@ def runs(update: Update, context: CallbackContext):
     update.effective_message.reply_text(random.choice(fun_strings.RUN_STRINGS))
 
 @run_async
+def insults(update: Update, context: CallbackContext):
+    reply_text = update.effective_message.reply_to_message.reply_text if update.effective_message.reply_to_message else update.effective_message.reply_text
+    reply_text(random.choice(fun_strings.INSULT_STRINGS))
+
+@run_async
 def shout(update: Update, context: CallbackContext):
     args = context.args
     text = " ".join(args)
@@ -41,7 +46,7 @@ def slap(update: Update, context: CallbackContext):
     user_id = extract_user(message, args)
 
     if user_id == bot.id:
-        temp = random.choice(fun_strings.SLAP_SAITAMA_TEMPLATES)
+        temp = random.choice(fun_strings.SLAP_MEGUMI_TEMPLATES)
 
         if isinstance(temp, list):
             if temp[2] == "tmute":
@@ -140,12 +145,14 @@ __help__ = """
  • `/decide`*:* Randomly answers yes/no/maybe
  • `/toss`*:* Tosses A coin
  • `/bluetext`*:* check urself :V
+ • `/insults`*:* reply a random insult from an array of replies.
  • `/roll`*:* Roll a dice.
  • `/shout <keyword>`*:* write anything you want to give loud shout.
  • `/rlg`*:* Join ears,nose,mouth and create an emo ;-;
 """
 
 RUNS_HANDLER = DisableAbleCommandHandler("runs", runs)
+INSULTS_HANDLER = DisableAbleCommandHandler("insults", insults)
 SLAP_HANDLER = DisableAbleCommandHandler("slap", slap)
 SHOUT_HANDLER = DisableAbleCommandHandler("shout", shout)
 ROLL_HANDLER = DisableAbleCommandHandler("roll", roll)
@@ -157,6 +164,7 @@ DECIDE_HANDLER = DisableAbleCommandHandler("decide", decide)
 TABLE_HANDLER = DisableAbleCommandHandler("table", table)
 
 dispatcher.add_handler(RUNS_HANDLER)
+dispatcher.add_handler(INSULTS_HANDLER)
 dispatcher.add_handler(SLAP_HANDLER)
 dispatcher.add_handler(ROLL_HANDLER)
 dispatcher.add_handler(SHOUT_HANDLER)
@@ -170,9 +178,10 @@ dispatcher.add_handler(TABLE_HANDLER)
 __mod_name__ = "Fun"
 __command_list__ = [
     "runs", "slap", "roll", "toss", "shrug", "bluetext", "rlg", "decide",
-    "table", "shout"
+    "table", "shout", "insults"
 ]
 __handlers__ = [
     RUNS_HANDLER, SLAP_HANDLER, ROLL_HANDLER, TOSS_HANDLER, SHRUG_HANDLER,
-    BLUETEXT_HANDLER, RLG_HANDLER, DECIDE_HANDLER, TABLE_HANDLER, SHOUT_HANDLER
+    BLUETEXT_HANDLER, RLG_HANDLER, DECIDE_HANDLER, TABLE_HANDLER, SHOUT_HANDLER,
+    INSULTS_HANDLER
 ]

@@ -146,6 +146,7 @@ In future we might make it open for any chat and controllable by group admins.
 
 ADD_CHAT_HANDLER = CommandHandler("addchat", add_chat, filters=CustomFilters.sudo_filter)
 REMOVE_CHAT_HANDLER = CommandHandler("rmchat", remove_chat, filters=CustomFilters.sudo_filter)
+CHATBOT_REGEX_HANDLER = MessageHandler(Filters.regex(r"(?i)megumi"), chatbot, friendly="chatbot")
 CHATBOT_HANDLER = MessageHandler(
     Filters.text & (~Filters.regex(r"^#[^\s]+") & ~Filters.regex(r"^!")
                     & ~Filters.regex(r"^\/")), chatbot)
@@ -156,4 +157,5 @@ LIST_CB_CHATS_HANDLER = CommandHandler(
 dispatcher.add_handler(ADD_CHAT_HANDLER)
 dispatcher.add_handler(REMOVE_CHAT_HANDLER)
 dispatcher.add_handler(CHATBOT_HANDLER)
+dispatcher.add_handler(CHATBOT_REGEX_HANDLER)
 dispatcher.add_handler(LIST_CB_CHATS_HANDLER)
