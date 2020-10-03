@@ -21,7 +21,7 @@ from telegram.ext.dispatcher import DispatcherHandlerStop, run_async
 from telegram.utils.helpers import escape_markdown
 
 PM_START_TEXT = """
-Hi *{}*, my name is *Megumi Kato*!\n
+Hi *{}*, my name is *Nezuko*!\n
 I am an Anime themed group management bot with a lot of Special Features.\n
 You can find my list of available commands with /help.
 \nWanna Add me to your Group? Just click the button below!
@@ -29,7 +29,7 @@ You can find my list of available commands with /help.
 MEGUMI_IMG = "https://telegra.ph/file/aebaa70957ff54d9a816d.jpg"
 
 HELP_STRINGS = """
-Hey! My name is *Megumi*. I am a group management bot, here to help you get around and keep the order in your groups!
+Hey! My name is *Nezuko*. I am a group management bot, here to help you get around and keep the order in your groups!
 
 *Main* commands available:
 
@@ -131,17 +131,15 @@ def megumi_about_callback(update: Update, context: CallbackContext):
         first_name = update.effective_user.first_name
         buttons = [[
                 InlineKeyboardButton(
-                    text="👥 Add Megumi to your group", url="https://t.me/MegumiRobot?startgroup=new"
+                    text="👥 Add Nezuko to your group", url="https://t.me/MissNezukoBot?startgroup=new"
                 ),
             ]]            
         buttons += [[
                 InlineKeyboardButton(
                     text="❓ Help", callback_data="help_back"
                 ),
-                InlineKeyboardButton(
-                    text="⚙️ Source Code", callback_data="aboutmanu_"
-                ),
-            ]]
+             
+              ]]
         update.effective_message.edit_text(
             PM_START_TEXT.format(
                 escape_markdown(first_name),
