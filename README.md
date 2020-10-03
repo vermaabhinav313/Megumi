@@ -2,6 +2,9 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/eb267c491b054cbc8691fd0a226a0cbd)](https://app.codacy.com/manual/Unknown746/Megumi?utm_source=github.com&utm_medium=referral&utm_content=Unknown746/Megumi&utm_campaign=Badge_Grade_Settings) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://perso.crans.org/besson/LICENSE.html) [![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 
 
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
+
 A modular Telegram Python bot running on python3 with a sqlalchemy database.
 
 Originally a Marie fork, Megumi evolved further and was built to be more robust and more dedicated to Anime Chats. 
